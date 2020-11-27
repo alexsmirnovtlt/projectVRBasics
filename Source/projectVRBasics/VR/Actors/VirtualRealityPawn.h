@@ -51,9 +51,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	bool bStartWithPlatformIndependentControllers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup", meta = (EditCondition = "bStartWithPlatformIndependentControllers"))
-	TSubclassOf<AVirtualRealityMotionController> LeftStartControllerClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup", meta = (EditCondition = "bStartWithPlatformIndependentControllers"))
-	TSubclassOf<AVirtualRealityMotionController> RightStartControllerClass;
+	FName StartingControllerName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	TArray<FControllerType> ControllerTypes;
@@ -63,6 +61,8 @@ protected:
 	UCameraComponent* MainCamera;
 	AVirtualRealityMotionController* LeftHand;
 	AVirtualRealityMotionController* RightHand;
+
+	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);;
 
 	bool InitHeadset();
 	void InitMotionControllers();

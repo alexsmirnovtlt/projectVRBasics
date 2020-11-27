@@ -21,6 +21,9 @@ AVirtualRealityPawn::AVirtualRealityPawn()
 	// VR Camera
 	MainCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	MainCamera->AttachTo(RootComponent);
+
+	// Cached attachment properties for controllers creation
+	AttachmentRules.ScaleRule = EAttachmentRule::KeepWorld;
 }
 
 void AVirtualRealityPawn::BeginPlay()
@@ -56,10 +59,9 @@ bool AVirtualRealityPawn::InitHeadset()
 
 void AVirtualRealityPawn::InitMotionControllers()
 {
-	if (bStartWithPlatformIndependentControllers && LeftStartControllerClass && RightStartControllerClass)
+	if (bStartWithPlatformIndependentControllers)
 	{
-		CreateMotionController(true, LeftStartControllerClass);
-		CreateMotionController(false, RightStartControllerClass);
+		SwitchMotionControllers(StartingControllerName);
 	}
 	else
 	{
@@ -93,20 +95,6 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 	}
 
 	return false;
-
-	//auto DeviceNameStr = HeadsetInfoStr. HeadsetInfoStr.Find("HMD Device: ");
-
-	/*LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ControllerClass, FVector::ZeroVector, FRotator::ZeroRotator);
-	LeftHand->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	LeftHand->SetOwner(this);
-	LeftHand->InitialSetup(TEXT("Left"));
-	// TODO more init - hand and parent ref
-
-	RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ControllerClass, FVector::ZeroVector, FRotator::ZeroRotator);
-	RightHand->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	RightHand->SetOwner(this);
-	RightHand->InitialSetup(TEXT("Right"));*/
-
 }
 
 void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCreate)
@@ -119,7 +107,7 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 		}
 
 		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
-		LeftHand->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		LeftHand->AttachToComponent(RootComponent, AttachmentRules);
 		LeftHand->SetOwner(this);
 		LeftHand->InitialSetup(TEXT("Left"));
 	}
@@ -131,7 +119,7 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 		}
 
 		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
-		RightHand->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		RightHand->AttachToComponent(RootComponent, AttachmentRules);
 		RightHand->SetOwner(this);
 		RightHand->InitialSetup(TEXT("Right"));
 	}
