@@ -4,6 +4,7 @@
 #include "VirtualRealityMotionController.h"
 
 #include "MotionControllerComponent.h"
+#include "VirtualRealityPawn.h"
 
 
 AVirtualRealityMotionController::AVirtualRealityMotionController()
@@ -20,17 +21,16 @@ AVirtualRealityMotionController::AVirtualRealityMotionController()
 void AVirtualRealityMotionController::BeginPlay()
 {
 	Super::BeginPlay();
-	//MotionController.model
-	//MotionController.GetSystem
-	//UE_LOG(LogTemp, Warning, TEXT("DisplayModelSource: %s"), *MotionController->DisplayModelSource.ToString());
-	
-	//UE_LOG(LogTemp, Warning, TEXT("DisplayModelSource: %s"), *MotionController->CustomModelSourceId.ToString());
-	//UE_LOG(LogTemp, Warning, TEXT("MotionSource: %s"), *MotionController->CustomDisplayMesh->GetName());
+
+	AutoReceiveInput = EAutoReceiveInput::Player0; // Input is defined in BP child classes, so every controller can define custom visual and logic behaviour (thumbstick rotation, button presses etc)
 }
 
-void AVirtualRealityMotionController::InitialSetup(FName MotionSource)
+void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource)
 {
+	OwningPawn = PawnOwner;
 	MotionController->SetTrackingMotionSource(MotionSource);
+
+	SetOwner(OwningPawn);
 }
 
 void AVirtualRealityMotionController::Tick(float DeltaTime)

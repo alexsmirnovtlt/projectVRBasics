@@ -13,7 +13,7 @@
 
 AVirtualRealityPawn::AVirtualRealityPawn()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	// Root
 	auto NewRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
@@ -82,6 +82,8 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 	{
 		if (HeadsetType.HeadsetName.IsEqual(NewProfileName))
 		{
+			CurrentControllersTypeName = NewProfileName;
+
 			auto LeftHandClass = HeadsetType.LeftController.LoadSynchronous();
 			auto RightHandClass = HeadsetType.RightController.LoadSynchronous();
 			if (ensure(LeftHandClass && RightHandClass))
@@ -94,6 +96,7 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 		}
 	}
 
+	CurrentControllersTypeName = TEXT("None");
 	return false;
 }
 
@@ -108,8 +111,8 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 
 		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		LeftHand->AttachToComponent(RootComponent, AttachmentRules);
-		LeftHand->SetOwner(this);
-		LeftHand->InitialSetup(TEXT("Left"));
+
+		LeftHand->InitialSetup(this, TEXT("Left"));
 	}
 	else
 	{
@@ -120,8 +123,8 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 
 		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		RightHand->AttachToComponent(RootComponent, AttachmentRules);
-		RightHand->SetOwner(this);
-		RightHand->InitialSetup(TEXT("Right"));
+		
+		RightHand->InitialSetup(this, TEXT("Right"));
 	}
 }
 
@@ -129,6 +132,11 @@ void AVirtualRealityPawn::SetupPlayerInputComponent(UInputComponent* PlayerInput
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+FName AVirtualRealityPawn::GetCurrentControllersTypeName()
+{
+	return CurrentControllersTypeName;
 }
 /*
 EHeadsetType AVirtualRealityPawn::DetectControllersType()

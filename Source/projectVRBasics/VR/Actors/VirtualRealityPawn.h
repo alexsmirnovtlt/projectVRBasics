@@ -47,6 +47,10 @@ public:
 	//virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "VR Setup")
+	FName GetCurrentControllersTypeName();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	bool bStartWithPlatformIndependentControllers;
@@ -62,10 +66,13 @@ protected:
 	AVirtualRealityMotionController* LeftHand;
 	AVirtualRealityMotionController* RightHand;
 
+	FName CurrentControllersTypeName;
+
 	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);;
 
 	bool InitHeadset();
 	void InitMotionControllers();
 	void CreateMotionController(bool bLeft, UClass* ClassToCreate);
+	UFUNCTION(BlueprintCallable, Category = "VR Setup")
 	bool SwitchMotionControllers(FName NewProfileName);
 };

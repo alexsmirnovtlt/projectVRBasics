@@ -7,6 +7,8 @@
 
 #include "VirtualRealityMotionController.generated.h"
 
+class AVirtualRealityPawn;
+
 UCLASS(abstract, Blueprintable)
 class PROJECTVRBASICS_API AVirtualRealityMotionController : public AActor
 {
@@ -21,9 +23,12 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	void InitialSetup(FName MotionSource);
+	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource);
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class UMotionControllerComponent* MotionController;
+
+	UPROPERTY(BlueprintReadonly)
+	AVirtualRealityPawn* OwningPawn;
 };
