@@ -78,23 +78,79 @@
 			"requirement": "optional"
 		},
 		{
-			"name": "/actions/main/in/Button_Left_Primary",
+			"name": "/actions/main/in/Button_Left_Primary_Press",
 			"type": "boolean"
 		},
 		{
-			"name": "/actions/main/in/Button_Left_Secondary",
+			"name": "/actions/main/in/Button_Left_Secondary_Press",
 			"type": "boolean"
 		},
 		{
-			"name": "/actions/main/in/Button_Right_Primary",
+			"name": "/actions/main/in/Button_Right_Primary_Press",
 			"type": "boolean"
 		},
 		{
-			"name": "/actions/main/in/Button_Right_Secondary",
+			"name": "/actions/main/in/Button_Right_Secondary_Press",
 			"type": "boolean"
 		},
 		{
 			"name": "/actions/main/in/Button_Menu",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Primary_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Secondary_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Primary_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Secondary_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Trigger_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Trigger_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Trigger_Press",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Trigger_Press",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Grip_Press",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Grip_Press",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Thumbstick_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Thumbstick_Touch",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Right_Thumbstick_Press",
+			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/Button_Left_Thumbstick_Press",
 			"type": "boolean"
 		},
 		{
@@ -236,11 +292,25 @@
 			"/actions/main/out/vibrateleft": "Haptic (Left)",
 			"/actions/main/out/vibrateright": "Haptic (Right)",
 			"/actions/main/in/open_console": "Open Console",
-			"/actions/main/in/Button_Left_Primary": "Button_Left_Primary",
-			"/actions/main/in/Button_Left_Secondary": "Button_Left_Secondary",
-			"/actions/main/in/Button_Right_Primary": "Button_Right_Primary",
-			"/actions/main/in/Button_Right_Secondary": "Button_Right_Secondary",
+			"/actions/main/in/Button_Left_Primary_Press": "Button_Left_Primary_Press",
+			"/actions/main/in/Button_Left_Secondary_Press": "Button_Left_Secondary_Press",
+			"/actions/main/in/Button_Right_Primary_Press": "Button_Right_Primary_Press",
+			"/actions/main/in/Button_Right_Secondary_Press": "Button_Right_Secondary_Press",
 			"/actions/main/in/Button_Menu": "Button_Menu",
+			"/actions/main/in/Button_Left_Primary_Touch": "Button_Left_Primary_Touch",
+			"/actions/main/in/Button_Left_Secondary_Touch": "Button_Left_Secondary_Touch",
+			"/actions/main/in/Button_Right_Primary_Touch": "Button_Right_Primary_Touch",
+			"/actions/main/in/Button_Right_Secondary_Touch": "Button_Right_Secondary_Touch",
+			"/actions/main/in/Button_Right_Trigger_Touch": "Button_Right_Trigger_Touch",
+			"/actions/main/in/Button_Left_Trigger_Touch": "Button_Left_Trigger_Touch",
+			"/actions/main/in/Button_Right_Trigger_Press": "Button_Right_Trigger_Press",
+			"/actions/main/in/Button_Left_Trigger_Press": "Button_Left_Trigger_Press",
+			"/actions/main/in/Button_Right_Grip_Press": "Button_Right_Grip_Press",
+			"/actions/main/in/Button_Left_Grip_Press": "Button_Left_Grip_Press",
+			"/actions/main/in/Button_Right_Thumbstick_Touch": "Button_Right_Thumbstick_Touch",
+			"/actions/main/in/Button_Left_Thumbstick_Touch": "Button_Left_Thumbstick_Touch",
+			"/actions/main/in/Button_Right_Thumbstick_Press": "Button_Right_Thumbstick_Press",
+			"/actions/main/in/Button_Left_Thumbstick_Press": "Button_Left_Thumbstick_Press",
 			"/actions/main/in/Axis_Left_Trigger axis": "Axis_Left_Trigger",
 			"/actions/main/in/Axis_Right_Trigger axis": "Axis_Right_Trigger",
 			"/actions/main/in/Axis_Left_Grip axis": "Axis_Left_Grip",

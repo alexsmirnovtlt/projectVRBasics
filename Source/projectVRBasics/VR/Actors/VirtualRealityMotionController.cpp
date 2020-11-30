@@ -15,14 +15,16 @@ AVirtualRealityMotionController::AVirtualRealityMotionController()
 	RootComponent = NewRootComponent;
 
 	MotionController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("MotionControllerComponent"));
-	MotionController->AttachTo(RootComponent);
+	MotionController->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	
+	// TODO Check if it may lead to potential problems (multiplayer?)
+	AutoReceiveInput = EAutoReceiveInput::Player0; // Input is defined in BP child classes, so every controller can define custom visual and logic behaviour (thumbstick rotation, button presses etc)
 }
 
 void AVirtualRealityMotionController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AutoReceiveInput = EAutoReceiveInput::Player0; // Input is defined in BP child classes, so every controller can define custom visual and logic behaviour (thumbstick rotation, button presses etc)
 }
 
 void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource)
