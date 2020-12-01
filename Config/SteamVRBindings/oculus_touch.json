@@ -267,7 +267,7 @@
 					{
 						"position":
 						{
-							"output": "/actions/main/in/Axis_Right_Joystick_X,Axis_Right_Joystick_Y X Y_axis2d"
+							"output": "/actions/main/in/Axis_Right_Thumbstick_X,Axis_Right_Thumbstick_Y X Y_axis2d"
 						}
 					}
 				},
@@ -278,7 +278,7 @@
 					{
 						"position":
 						{
-							"output": "/actions/main/in/Axis_Left_Joystick_X,Axis_Left_Joystick_Y X Y_axis2d"
+							"output": "/actions/main/in/Axis_Left_Thumbstick_X,Axis_Left_Thumbstick_Y X Y_axis2d"
 						}
 					}
 				}

@@ -7,8 +7,10 @@
 #include "MotionControllerComponent.h"
 #include "Components/SceneComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "IXRTrackingSystem.h"
 #include "IXRSystemAssets.h"
+#include "Engine/World.h"
 
 
 AVirtualRealityPawn::AVirtualRealityPawn()
@@ -30,49 +32,55 @@ void AVirtualRealityPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TrackingSystem = GEngine->XRSystem.Get();
-	if (!ensure(TrackingSystem)) { return; }
-
-	UE_LOG(LogTemp, Warning, TEXT("VR Headset Info: %s"), *TrackingSystem->GetVersionString()); // Log contains important headset info such as manufacturer and driver version 
+	TSharedPtr<IXRTrackingSystem, ESPMode::ThreadSafe> TrackingSystem = GEngine->XRSystem;
+	if (!ensure(TrackingSystem.Get())) { return; }
 
 	// Check that VR Headset is present and set tracking origin
-	if (!InitHeadset()) return;
-
-	InitMotionControllers();
+	if (!InitHeadset(*TrackingSystem)) return;
+	// Trying to create motion controlles using StartingControllerName if not none, or detecting Headset type using info from TrackingSystem
+	InitMotionControllers(*TrackingSystem);
 }
 
-bool AVirtualRealityPawn::InitHeadset()
+bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem& TrackingSystem)
 {
-	uint32 HMDCount = TrackingSystem->CountTrackedDevices(EXRTrackedDeviceType::HeadMountedDisplay);
+	uint32 HMDCount = TrackingSystem.CountTrackedDevices(EXRTrackedDeviceType::HeadMountedDisplay);
 
 	if (HMDCount != 1)
 	{
-		// TODO Handle no headset
-
+		UE_LOG(LogTemp, Error, TEXT("Headset was not detected"));
+		UGameplayStatics::OpenLevel(GetWorld()->GetGameInstance(), StartupLevelName);
 		return false;
 	}
 	// Setting that our camera will change its local position relative to the real world floor
-	TrackingSystem->SetTrackingOrigin(EHMDTrackingOrigin::Floor); // will work for everything except PS Move, EHMDTrackingOrigin::Eye for that
+	TrackingSystem.SetTrackingOrigin(EHMDTrackingOrigin::Floor); // will work for everything except PS Move, EHMDTrackingOrigin::Eye for that
 
 	return true;
 }
 
-void AVirtualRealityPawn::InitMotionControllers()
+void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem& TrackingSystem)
 {
-	if (bStartWithPlatformIndependentControllers)
+	bool bSuccessControllersCreation = false;
+
+	if (!StartingControllerName.IsNone())
 	{
-		SwitchMotionControllers(StartingControllerName);
+		bSuccessControllersCreation = SwitchMotionControllers(StartingControllerName);
 	}
-	else
+
+	if(!bSuccessControllersCreation)
 	{
-		FString HeadsetInfo = TrackingSystem->GetVersionString();
+		FString HeadsetInfo = TrackingSystem.GetVersionString();
 		for (auto& HeadsetType : ControllerTypes)
 		{
 			if (HeadsetInfo.Contains(HeadsetType.HeadsetName.ToString()))
 			{
-				SwitchMotionControllers(HeadsetType.HeadsetName);
+				bSuccessControllersCreation = SwitchMotionControllers(HeadsetType.HeadsetName);
 			}
 		}
+	}
+
+	if (!bSuccessControllersCreation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Could not find Motion Controller Class to Spawn. Check StartingControllerName and/or ControllerTypes fields at %s"), *this->GetClass()->GetName());
 	}
 }
 
@@ -90,6 +98,9 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 			{
 				CreateMotionController(true, LeftHandClass);
 				CreateMotionController(false, RightHandClass);
+
+				LeftHand->AddPairedController(RightHand);
+				RightHand->AddPairedController(LeftHand);
 			}
 
 			return true;
@@ -128,25 +139,7 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 	}
 }
 
-void AVirtualRealityPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
 FName AVirtualRealityPawn::GetCurrentControllersTypeName()
 {
 	return CurrentControllersTypeName;
 }
-/*
-EHeadsetType AVirtualRealityPawn::DetectControllersType()
-{
-	// Should be reworked. Detecting by parsing headset info string. Should somehow be detecting from controllers themselves.
-
-	FString HeadsetInfo = TrackingSystem->GetVersionString();
-	UE_LOG(LogTemp, Warning, TEXT("VR Headset Info: %s"), *HeadsetInfo); // Log contains important headset info such as manufacturer and driver version 
-
-
-
-	return EHeadsetType::Other;
-}*/

@@ -170,11 +170,11 @@
 			"type": "vector1"
 		},
 		{
-			"name": "/actions/main/in/Axis_Right_Joystick_X,Axis_Right_Joystick_Y X Y_axis2d",
+			"name": "/actions/main/in/Axis_Right_Thumbstick_X,Axis_Right_Thumbstick_Y X Y_axis2d",
 			"type": "vector2"
 		},
 		{
-			"name": "/actions/main/in/Axis_Left_Joystick_X,Axis_Left_Joystick_Y X Y_axis2d",
+			"name": "/actions/main/in/Axis_Left_Thumbstick_X,Axis_Left_Thumbstick_Y X Y_axis2d",
 			"type": "vector2"
 		}
 	],
@@ -315,8 +315,8 @@
 			"/actions/main/in/Axis_Right_Trigger axis": "Axis_Right_Trigger",
 			"/actions/main/in/Axis_Left_Grip axis": "Axis_Left_Grip",
 			"/actions/main/in/Axis_Right_Grip axis": "Axis_Right_Grip",
-			"/actions/main/in/Axis_Right_Joystick_X,Axis_Right_Joystick_Y X Y_axis2d": "Axis_Right_Joystick",
-			"/actions/main/in/Axis_Left_Joystick_X,Axis_Left_Joystick_Y X Y_axis2d": "Axis_Left_Joystick",
+			"/actions/main/in/Axis_Right_Thumbstick_X,Axis_Right_Thumbstick_Y X Y_axis2d": "Axis_Right_Thumbstick",
+			"/actions/main/in/Axis_Left_Thumbstick_X,Axis_Left_Thumbstick_Y X Y_axis2d": "Axis_Left_Thumbstick",
 			"/actions/main": "Main Game Actions"
 		}
 	]
