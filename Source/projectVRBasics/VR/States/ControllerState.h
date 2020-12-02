@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+
 #include "ControllerState.generated.h"
+
 
 UENUM(BlueprintType)
 enum class EButtonActionType : uint8 {
@@ -29,13 +31,17 @@ public:
 	void SetOwningController(AVirtualRealityMotionController* MotionController);
 	void SetOtherControllerReference(UControllerState* OtherControllerReference);
 
-	//UFUNCTION(BlueprintCallable)
-	uint16 GetControllerStateAsByte();
+	uint16 GetControllerStateAsByte() const;
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void ChangeState(UControllerState* PreviousState);
+	void NotifyOtherControllerOfStateChange(bool bStateEntered);
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Override")
+	void OnStateEnter();
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Override")
+	void OnStateExit();
 
 	// Exposing input to BP as events
+
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
 	void Input_Axis_Thumbstick(float Horizontal, float Vertical);
 
@@ -53,8 +59,11 @@ public:
 
 protected:
 
-	UPROPERTY()
-	UControllerState* OtherController;
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
+	void OtherControllerStateChanged(UControllerState* OtherControllerState, bool bEntered);
+
+	UPROPERTY(BlueprintReadonly)
+	TWeakObjectPtr<UControllerState> OtherController;
 
 	UPROPERTY(BlueprintReadonly)
 	AVirtualRealityMotionController* OwningMotionController;

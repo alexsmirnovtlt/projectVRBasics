@@ -27,6 +27,17 @@ public:
 	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource);
 	void AddPairedController(AVirtualRealityMotionController* AnotherMotionController);
 
+	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
+	void ChangeState(TSubclassOf<UControllerState> NewStateClass, UControllerState* PreviousState); 
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
+	FVector GetControllerWorldOriginLocation() const;
+	virtual FVector GetControllerWorldOriginLocation_Implementation() const;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
+	FRotator GetControllerWorldOriginRotation() const;
+	virtual FRotator GetControllerWorldOriginRotation_Implementation() const;
+	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP.
+	
 	UFUNCTION()
 	UControllerState* GetControllerState();
 
@@ -39,7 +50,7 @@ protected:
 	class UMotionControllerComponent* MotionController;
 
 	UPROPERTY(BlueprintReadonly)
-	AVirtualRealityPawn* OwningPawn;
+	AVirtualRealityPawn* OwningVRPawn;
 
 	UPROPERTY(BlueprintReadonly)
 	UControllerState* ControllerState;

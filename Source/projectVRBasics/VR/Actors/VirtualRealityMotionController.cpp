@@ -33,19 +33,20 @@ void AVirtualRealityMotionController::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("StartStateClass was not defined on %s. Empty State was created instead"), *this->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("StartStateClass was not defined on %s. Empty State was created instead. Input will not work"), *this->GetName());
 		ControllerState = NewObject<UControllerState>();
 	}
 
 	ControllerState->SetOwningController(this);
+	ControllerState->OnStateEnter();
 }
 
 void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource)
 {
-	OwningPawn = PawnOwner;
+	OwningVRPawn = PawnOwner;
 	MotionController->SetTrackingMotionSource(MotionSource);
 
-	SetOwner(OwningPawn);
+	SetOwner(OwningVRPawn);
 }
 
 void AVirtualRealityMotionController::AddPairedController(AVirtualRealityMotionController* AnotherMotionController)
@@ -53,7 +54,35 @@ void AVirtualRealityMotionController::AddPairedController(AVirtualRealityMotionC
 	ControllerState->SetOtherControllerReference(AnotherMotionController->GetControllerState());
 }
 
+void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> NewStateClass, UControllerState* PreviousState)
+{
+	// Switching controller state, exiting current state, deleting that object and creating new one.
+	// Example: We started with idle state, no input from the player. Then Player moves left stick up. We are switching state from idle to Teleport_Find. Possible input bindings are changed in this state (f.e we will be unable to grab items in this state or explicitly state that teleport will be aborted in that case)
+
+	PreviousState->OnStateExit();
+	PreviousState->NotifyOtherControllerOfStateChange(false);
+
+	// Dont need to explicitly delete current ControllerState because there will be no references to it and it will be garbage collected (Parent class is UObject, not AActor)
+
+	if (NewStateClass)
+	{
+		ControllerState = NewObject<UControllerState>(this, NewStateClass);
+		ControllerState->OnStateEnter();
+		ControllerState->NotifyOtherControllerOfStateChange(true);
+	}
+}
+
 UControllerState* AVirtualRealityMotionController::GetControllerState()
 {
 	return ControllerState;
+}
+
+FVector AVirtualRealityMotionController::GetControllerWorldOriginLocation_Implementation() const
+{
+	return GetActorLocation();
+}
+
+FRotator AVirtualRealityMotionController::GetControllerWorldOriginRotation_Implementation() const
+{
+	return GetActorRotation();
 }

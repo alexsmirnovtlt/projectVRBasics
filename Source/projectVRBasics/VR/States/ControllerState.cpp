@@ -3,10 +3,6 @@
 
 #include "ControllerState.h"
 
-/*void UControllerState::ChangeState(UControllerState& PreviousState)
-{
-
-}*/
 
 void UControllerState::SetOtherControllerReference(UControllerState* OtherControllerReference)
 {
@@ -18,7 +14,20 @@ void UControllerState::SetOwningController(AVirtualRealityMotionController* Moti
 	OwningMotionController = MotionController;
 }
 
-uint16 UControllerState::GetControllerStateAsByte()
+void UControllerState::NotifyOtherControllerOfStateChange(bool bStateEntered)
+{
+	if (OtherController.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("VALID CONTROLLER"));
+		OtherController.Get()->OtherControllerStateChanged(this, bStateEntered);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("INVALID CONTROLLER"));
+	}
+}
+
+uint16 UControllerState::GetControllerStateAsByte() const
 {
 	return CurrentState;
 }
