@@ -6,7 +6,7 @@
 
 void UControllerState::SetOtherControllerReference(UControllerState* OtherControllerReference)
 {
-	OtherController = OtherControllerReference;
+	PairedController = OtherControllerReference;
 }
 
 void UControllerState::SetOwningController(AVirtualRealityMotionController* MotionController)
@@ -14,20 +14,25 @@ void UControllerState::SetOwningController(AVirtualRealityMotionController* Moti
 	OwningMotionController = MotionController;
 }
 
-void UControllerState::NotifyOtherControllerOfStateChange(bool bStateEntered)
+void UControllerState::NotifyPairedControllerOfStateChange(bool bStateEntered)
 {
-	if (OtherController.IsValid())
+	if (PairedController.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("VALID CONTROLLER"));
-		OtherController.Get()->OtherControllerStateChanged(this, bStateEntered);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("INVALID CONTROLLER"));
+		PairedController.Get()->PairedControllerStateChanged(this, bStateEntered);
 	}
 }
 
-uint16 UControllerState::GetControllerStateAsByte() const
+UControllerState* UControllerState::GetPairedControllerState()
 {
-	return CurrentState;
+	if (!PairedController.IsValid())
+	{
+		return nullptr;
+	}
+
+	return PairedController.Get();
+}
+
+int32 UControllerState::GetControllerStateAsInt_Implementation() const
+{
+	return 0; // Must be overridden in BP because State Enum was created in the Editor so when new state is added, project C++ code should`nt be rebuild
 }

@@ -28,7 +28,7 @@ public:
 	void AddPairedController(AVirtualRealityMotionController* AnotherMotionController);
 
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
-	void ChangeState(TSubclassOf<UControllerState> NewStateClass, UControllerState* PreviousState); 
+	void ChangeState(TSubclassOf<UControllerState> NewStateClass, bool NotifyPairedControllerIfAble = true); 
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	FVector GetControllerWorldOriginLocation() const;
@@ -39,7 +39,7 @@ public:
 	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP.
 	
 	UFUNCTION()
-	UControllerState* GetControllerState();
+	UControllerState* GetControllerState() const;
 
 protected:
 

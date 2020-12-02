@@ -54,25 +54,40 @@ void AVirtualRealityMotionController::AddPairedController(AVirtualRealityMotionC
 	ControllerState->SetOtherControllerReference(AnotherMotionController->GetControllerState());
 }
 
-void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> NewStateClass, UControllerState* PreviousState)
+void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> NewStateClass, bool NotifyPairedControllerIfAble)
 {
 	// Switching controller state, exiting current state, deleting that object and creating new one.
 	// Example: We started with idle state, no input from the player. Then Player moves left stick up. We are switching state from idle to Teleport_Find. Possible input bindings are changed in this state (f.e we will be unable to grab items in this state or explicitly state that teleport will be aborted in that case)
 
-	PreviousState->OnStateExit();
-	PreviousState->NotifyOtherControllerOfStateChange(false);
+	ControllerState->OnStateExit();
 
+	if (NotifyPairedControllerIfAble)
+	{
+		ControllerState->NotifyPairedControllerOfStateChange(false);
+	}
+
+	auto PairedControllerReference = ControllerState->GetPairedControllerState(); // we got to keep references between controllers if able. Caching then applying it back to a new state
+	
 	// Dont need to explicitly delete current ControllerState because there will be no references to it and it will be garbage collected (Parent class is UObject, not AActor)
 
 	if (NewStateClass)
 	{
 		ControllerState = NewObject<UControllerState>(this, NewStateClass);
 		ControllerState->OnStateEnter();
-		ControllerState->NotifyOtherControllerOfStateChange(true);
+
+		if (PairedControllerReference)
+		{
+			ControllerState->SetOtherControllerReference(PairedControllerReference);
+		}
+
+		if (NotifyPairedControllerIfAble)
+		{
+			ControllerState->NotifyPairedControllerOfStateChange(true);
+		}
 	}
 }
 
-UControllerState* AVirtualRealityMotionController::GetControllerState()
+UControllerState* AVirtualRealityMotionController::GetControllerState() const
 {
 	return ControllerState;
 }

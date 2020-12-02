@@ -31,13 +31,15 @@ public:
 	void SetOwningController(AVirtualRealityMotionController* MotionController);
 	void SetOtherControllerReference(UControllerState* OtherControllerReference);
 
-	uint16 GetControllerStateAsByte() const;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	int32 GetControllerStateAsInt() const;
 
-	void NotifyOtherControllerOfStateChange(bool bStateEntered);
+	void NotifyPairedControllerOfStateChange(bool bStateEntered);
+	UControllerState* GetPairedControllerState();
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Override")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
 	void OnStateEnter();
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Override")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
 	void OnStateExit();
 
 	// Exposing input to BP as events
@@ -60,14 +62,13 @@ public:
 protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void OtherControllerStateChanged(UControllerState* OtherControllerState, bool bEntered);
+	void PairedControllerStateChanged(UControllerState* OtherControllerNewState, bool bEntered);
 
 	UPROPERTY(BlueprintReadonly)
-	TWeakObjectPtr<UControllerState> OtherController;
+	TWeakObjectPtr<UControllerState> PairedController; // we are constantly cross-referencing both controller`s states so that should be a weak pointer
 
 	UPROPERTY(BlueprintReadonly)
 	AVirtualRealityMotionController* OwningMotionController;
 
-	UPROPERTY(EditAnywhere)
-	uint16 CurrentState;
+	//int32 CurrentState;
 };
