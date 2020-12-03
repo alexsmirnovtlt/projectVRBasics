@@ -25,10 +25,12 @@ public:
 	//virtual void Tick(float DeltaTime) override;
 
 	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource);
-	void AddPairedController(AVirtualRealityMotionController* AnotherMotionController);
+	void PairControllers(AVirtualRealityMotionController* AnotherMotionController);
 
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
 	void ChangeState(TSubclassOf<UControllerState> NewStateClass, bool NotifyPairedControllerIfAble = true); 
+	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
+	void ChangeToDefaultState(bool NotifyPairedControllerIfAble = true);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	FVector GetControllerWorldOriginLocation() const;

@@ -31,8 +31,10 @@ public:
 	void SetOwningController(AVirtualRealityMotionController* MotionController);
 	void SetOtherControllerReference(UControllerState* OtherControllerReference);
 
+	AVirtualRealityMotionController* GetOwningMotionController() const;
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	int32 GetControllerStateAsInt() const;
+	uint8 GetControllerStateAsByte() const;
 
 	void NotifyPairedControllerOfStateChange(bool bStateEntered);
 	UControllerState* GetPairedControllerState();
@@ -69,6 +71,4 @@ protected:
 
 	UPROPERTY(BlueprintReadonly)
 	AVirtualRealityMotionController* OwningMotionController;
-
-	//int32 CurrentState;
 };

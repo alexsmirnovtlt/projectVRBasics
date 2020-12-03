@@ -12,6 +12,8 @@
 #include "IXRSystemAssets.h"
 #include "Engine/World.h"
 
+#include "../States/ControllerState.h"
+
 
 AVirtualRealityPawn::AVirtualRealityPawn()
 {
@@ -99,8 +101,7 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 				CreateMotionController(true, LeftHandClass);
 				CreateMotionController(false, RightHandClass);
 
-				LeftHand->AddPairedController(RightHand);
-				RightHand->AddPairedController(LeftHand);
+				LeftHand->PairControllers(RightHand);
 			}
 
 			return true;
@@ -117,6 +118,11 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 	{
 		if (LeftHand)
 		{
+			auto ControllerState = LeftHand->GetControllerState();
+			if (ControllerState)
+			{
+				ControllerState->OnStateExit();
+			}
 			LeftHand->Destroy();
 		}
 
@@ -129,6 +135,11 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 	{
 		if (RightHand)
 		{
+			auto ControllerState = RightHand->GetControllerState();
+			if (ControllerState)
+			{
+				ControllerState->OnStateExit();
+			}
 			RightHand->Destroy();
 		}
 

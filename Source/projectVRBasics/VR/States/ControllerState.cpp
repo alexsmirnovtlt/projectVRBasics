@@ -32,7 +32,12 @@ UControllerState* UControllerState::GetPairedControllerState()
 	return PairedController.Get();
 }
 
-int32 UControllerState::GetControllerStateAsInt_Implementation() const
+AVirtualRealityMotionController* UControllerState::GetOwningMotionController() const
+{
+	return OwningMotionController;
+}
+
+uint8 UControllerState::GetControllerStateAsByte_Implementation() const
 {
 	return 0; // Must be overridden in BP because State Enum was created in the Editor so when new state is added, project C++ code should`nt be rebuild
 }
