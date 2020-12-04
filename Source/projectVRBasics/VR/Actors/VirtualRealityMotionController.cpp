@@ -112,3 +112,8 @@ FRotator AVirtualRealityMotionController::GetControllerWorldOriginRotation_Imple
 {
 	return MotionController->GetComponentRotation();
 }
+
+USplineComponent* AVirtualRealityMotionController::GetSplineComponent_Implementation() const
+{
+	return nullptr; // Spline Component must be manually created somewhere inside derived BP class and override this function
+}

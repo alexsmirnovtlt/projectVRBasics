@@ -20,8 +20,8 @@ AVirtualRealityPawn::AVirtualRealityPawn()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Root
-	auto NewRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
-	RootComponent = NewRootComponent;
+	PawnRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
+	RootComponent = PawnRootComponent;
 	// VR Camera
 	MainCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	MainCamera->AttachTo(RootComponent);
@@ -147,6 +147,27 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 		RightHand->AttachToComponent(RootComponent, AttachmentRules);
 		
 		RightHand->InitialSetup(this, TEXT("Right"));
+	}
+}
+
+void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
+{
+	// TODO That is need to be fixed because its rotates pawn too
+
+	FRotator AdditionalRotation = FRotator(0, YawToAdd, 0);
+	PawnRootComponent->AddLocalRotation(AdditionalRotation);
+}
+
+void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition)
+{
+	SetActorLocation(NewLocation);
+
+	// TODO Change like AddCameraYawRotation
+
+	if (bResetLocalPosition)
+	{
+		FVector NewPosition = FVector(0, 0, MainCamera->GetRelativeLocation().Z);
+		MainCamera->SetRelativeLocation(NewPosition);
 	}
 }
 

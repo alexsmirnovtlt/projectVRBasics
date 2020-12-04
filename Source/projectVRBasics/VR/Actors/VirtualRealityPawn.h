@@ -11,13 +11,6 @@ class UCameraComponent;
 class IXRTrackingSystem;
 class AVirtualRealityMotionController;
 
-/*UENUM(BlueprintType)
-enum class EHeadsetType : uint8 {
-	Oculus = 0 UMETA(DisplayName = "Oculus"),
-	Index = 1 UMETA(DisplayName = "Index"),
-	Vive = 2 UMETA(DisplayName = "Vive"),
-	Other = 3 UMETA(DisplayName = "Other")
-};*/
 
 USTRUCT(Blueprintable)
 struct FControllerType
@@ -52,6 +45,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")
 	FName GetCurrentControllersTypeName();
 
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	void AddCameraYawRotation(float YawToAdd); // used in teleport state when player may move view left or right. Pawn itself should not be affected by this view change
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	void TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition = true); //  used in teleport state when player teleports
+
 protected:
 	// If not empty, overrides controller type that will be used from ControllerTypes. If is empty, headset info will be used to determine Headset Type. (f.e if we use same hands on any Headset, we define it here and in ControllerTypes)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
@@ -59,8 +57,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	TArray<FControllerType> ControllerTypes;
-
-	UPROPERTY()
+	
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* PawnRootComponent;
+	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* MainCamera;
 	UPROPERTY()
 	AVirtualRealityMotionController* LeftHand;

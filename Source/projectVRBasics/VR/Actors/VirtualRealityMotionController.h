@@ -9,6 +9,8 @@
 
 class AVirtualRealityPawn;
 class UControllerState;
+class USplineComponent;
+
 
 UCLASS(Blueprintable, abstract)
 class PROJECTVRBASICS_API AVirtualRealityMotionController : public AActor
@@ -39,7 +41,9 @@ public:
 	FRotator GetControllerWorldOriginRotation() const;
 	virtual FRotator GetControllerWorldOriginRotation_Implementation() const;
 	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP.
-	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
+	USplineComponent* GetSplineComponent() const;
+
 	UFUNCTION()
 	UControllerState* GetControllerState() const;
 
@@ -56,4 +60,7 @@ protected:
 
 	UPROPERTY(BlueprintReadonly)
 	UControllerState* ControllerState;
+
+	UPROPERTY()
+	USplineComponent* SplineComponent;
 };
