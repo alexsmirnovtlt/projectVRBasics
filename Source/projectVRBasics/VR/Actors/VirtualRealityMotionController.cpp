@@ -115,5 +115,11 @@ FRotator AVirtualRealityMotionController::GetControllerWorldOriginRotation_Imple
 
 USplineComponent* AVirtualRealityMotionController::GetSplineComponent_Implementation() const
 {
-	return nullptr; // Spline Component must be manually created somewhere inside derived BP class and override this function
+	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetSplineComponent()"), *this->GetClass()->GetFName().ToString());
+	return nullptr;
+}
+
+AVirtualRealityPawn* AVirtualRealityMotionController::GetVRPawn() const
+{
+	return OwningVRPawn;
 }

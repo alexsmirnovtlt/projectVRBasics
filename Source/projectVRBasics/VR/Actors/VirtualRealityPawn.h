@@ -43,12 +43,16 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")
-	FName GetCurrentControllersTypeName();
+	FName GetCurrentControllersTypeName() const;
 
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	void AddCameraYawRotation(float YawToAdd); // used in teleport state when player may move view left or right. Pawn itself should not be affected by this view change
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	void TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition = true); //  used in teleport state when player teleports
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	FVector GetCameraRelativeLocation() const;
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	FRotator GetCameraRelativeRotation() const;
 
 protected:
 	// If not empty, overrides controller type that will be used from ControllerTypes. If is empty, headset info will be used to determine Headset Type. (f.e if we use same hands on any Headset, we define it here and in ControllerTypes)
@@ -58,9 +62,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	TArray<FControllerType> ControllerTypes;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* PawnRootComponent;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UCameraComponent* MainCamera;
 	UPROPERTY()
 	AVirtualRealityMotionController* LeftHand;

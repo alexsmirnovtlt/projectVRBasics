@@ -47,6 +47,9 @@ public:
 	UFUNCTION()
 	UControllerState* GetControllerState() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Motion Controller")
+	AVirtualRealityPawn* GetVRPawn() const;
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup")

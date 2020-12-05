@@ -15,6 +15,7 @@ struct FPredictProjectilePathPointData;
 class USplineComponent;
 class UNavigationSystemV1;
 class USplineMeshComponent;
+class AVirtualRealityMotionController;
 
 /**
  * 
@@ -27,7 +28,7 @@ class PROJECTVRBASICS_API UVRTeleportLogic : public UObject
 public:
 
 	UFUNCTION(BlueprintCallable)
-	void Initialize(USplineComponent* SplineComponentReference);
+	void Initialize(AVirtualRealityMotionController* MotionController);
 	UFUNCTION(BlueprintCallable)
 	void HandleDestruction();
 
@@ -48,6 +49,8 @@ protected:
 	TSoftClassPtr<USplineMeshComponent> TeleportBeamPartClass;
 	UPROPERTY(EditDefaultsOnly, Category="Setup")
 	int32 InitialSplineMeshPoolSize = 20;
+	UPROPERTY(EditDefaultsOnly, Category = "Setup")
+	float CameraFadeDurationSec = 0.1f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	float TeleportProjectileRadius = 3.f;
@@ -55,6 +58,12 @@ protected:
 	float TeleportProjectileSpeed = 1400.f;
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	float TeleportSimulationTime = 1.f;
+	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
+	bool TeleportTraceComplex = false;
+	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
+	TEnumAsByte<ECollisionChannel> TeleportCollisionChannel = ECollisionChannel::ECC_WorldStatic;
+	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
+	FVector NavMeshCheckExtent = FVector(100, 100, 100);
 
 	TSharedPtr<FStreamableHandle> TeleportArrowHandle;
 	TSharedPtr<FStreamableHandle> TeleportBeamHandle;
@@ -73,6 +82,9 @@ protected:
 	UPROPERTY()
 	TArray<USplineMeshComponent*> SplineMeshPool;
 
+	UPROPERTY()
+	AVirtualRealityMotionController* OwningMotionController;
+
 private:
 
 	UNavigationSystemV1* NavigationSystem;
@@ -81,4 +93,9 @@ private:
 	void UpdateTargetTeleportLocation(bool bHit, FNavLocation NavLocationStruct, float InputX, float InputY);
 
 	void AddMeshToPool(int32 Count);
+
+	FTimerHandle TimerHandle_CameraFade;
+
+	UFUNCTION()
+	void OnFadeTimerEnd();
 };

@@ -3,40 +3,39 @@
 
 #include "VRTeleportLogic.h"
 
+#include "TimerManager.h"
 #include "Engine/World.h"
 #include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StreamableManager.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
+#include "GameFramework/PlayerController.h"
 
 #include "../../../General/GameInstances/GameInstWithStreamableManager.h"
+#include "../../../VR/Actors/VirtualRealityMotionController.h"
+#include "../../../VR/Actors/VirtualRealityPawn.h"
 
 
-void UVRTeleportLogic::Initialize(USplineComponent* SplineComponentReference)
+void UVRTeleportLogic::Initialize(AVirtualRealityMotionController* MotionController)
 {
 	auto GameInstance = UGameplayStatics::GetGameInstance(this);
-	if (!GameInstance || !SplineComponentReference || !GetWorld())
-	{
-		return;
-	}
+	if (!ensure(GameInstance && MotionController && GetWorld())) return;
 
-	SplineComponent = SplineComponentReference;
+	OwningMotionController = MotionController;
+	SplineComponent = OwningMotionController->GetSplineComponent();
+
+	NavigationSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 
 	auto GameInstanceWithStreamableManager = Cast<UGameInstWithStreamableManager>(GameInstance);
-	if (!GameInstanceWithStreamableManager)
-	{
-		return;
-	}
+	if (!ensure(GameInstanceWithStreamableManager && SplineComponent && NavigationSystem)) return;
 	
 	// Async loading needed resources
 	FStreamableManager& StreamableManager = GameInstanceWithStreamableManager->GetStreamableManager();
 	
 	TeleportArrowHandle = StreamableManager.RequestAsyncLoad(TeleportArrowClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
 	TeleportBeamHandle = StreamableManager.RequestAsyncLoad(TeleportBeamPartClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
-	//
-	
-	NavigationSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 }
 
 void UVRTeleportLogic::UpdateTeleportArc(float HorizontalInput, float VerticalInput, FVector StartLocation, FRotator StartRotation)
@@ -51,10 +50,10 @@ void UVRTeleportLogic::UpdateTeleportArc(float HorizontalInput, float VerticalIn
 		StartLocation,
 		StartRotation.Vector().GetSafeNormal() * TeleportProjectileSpeed,
 		TeleportSimulationTime,
-		ECollisionChannel::ECC_WorldStatic,
+		TeleportCollisionChannel,
 		SplineComponent->GetOwner()
 	);
-	ProjectilePathParams.bTraceComplex = true;
+	ProjectilePathParams.bTraceComplex = TeleportTraceComplex;
 
 	FPredictProjectilePathResult Result;
 	bool bHit = UGameplayStatics::PredictProjectilePath(this, ProjectilePathParams, Result);
@@ -65,12 +64,11 @@ void UVRTeleportLogic::UpdateTeleportArc(float HorizontalInput, float VerticalIn
 		return;
 	}
 
-	DrawProjectilePath(Result.PathData);
+	DrawProjectilePath(Result.PathData); // Drawing Arc regardless if we found actual teleport spot or not
 
 	// Placing Arrow if navigation mesh hit check successfull
-	
-	FNavLocation NavLocationStruct; // TODO change FVector(100, 100, 100));
-	bool NavCheckResult = NavigationSystem->ProjectPointToNavigation(Result.HitResult.Location, NavLocationStruct, FVector(100, 100, 100));
+	FNavLocation NavLocationStruct;
+	bool NavCheckResult = NavigationSystem->ProjectPointToNavigation(Result.HitResult.Location, NavLocationStruct, NavMeshCheckExtent);
 	UpdateTargetTeleportLocation(NavCheckResult, NavLocationStruct, HorizontalInput, VerticalInput);
 }
 
@@ -89,9 +87,42 @@ void UVRTeleportLogic::HideTeleportArc(bool bHideArrow)
 
 void UVRTeleportLogic::PerformTeleport()
 {
-	if (TeleportArrowActor || TeleportArrowActor->IsHidden()) return;
+	if (!TeleportArrowActor || TeleportArrowActor->IsHidden()) return;
 
-	// TODO Teleport
+	HideTeleportArc(true);
+
+	auto VRPawn = OwningMotionController->GetVRPawn();
+	if (VRPawn && VRPawn->GetController())
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			TimerHandle_CameraFade,
+			this,
+			&UVRTeleportLogic::OnFadeTimerEnd,
+			CameraFadeDurationSec,
+			false
+		);
+
+		auto PlayerController = Cast<APlayerController>(VRPawn->GetController());
+		if (PlayerController)
+		{
+			PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, CameraFadeDurationSec, FLinearColor::Black, false, true);
+		}
+	}
+}
+
+void UVRTeleportLogic::OnFadeTimerEnd()
+{
+	auto VRPawn = OwningMotionController->GetVRPawn();
+	if (VRPawn && VRPawn->GetController())
+	{
+		VRPawn->TeleportToLocation(TeleportArrowActor->GetActorLocation(), TeleportArrowActor->GetActorRotation(), true);
+
+		auto PlayerController = Cast<APlayerController>(VRPawn->GetController());
+		if (PlayerController)
+		{
+			PlayerController->PlayerCameraManager->StartCameraFade(1.f, 0.f, CameraFadeDurationSec, FLinearColor::Black);
+		}
+	}
 }
 
 void UVRTeleportLogic::DrawProjectilePath(TArray<FPredictProjectilePathPointData>& PointData)
@@ -128,13 +159,37 @@ void UVRTeleportLogic::UpdateTargetTeleportLocation(bool bHit, FNavLocation NavL
 {
 	if (!TeleportArrowActor) return;
 
-	TeleportArrowActor->SetActorHiddenInGame(!bHit);
-	
-	if (!bHit) return;
+	if (!bHit)
+	{
+		TeleportArrowActor->SetActorHiddenInGame(true);
+		return;
+	}
 
-	// TODO project to static mesh and update rotation
+	FHitResult OutHit;
+	FVector EndLocation = NavLocationStruct.Location + FVector::DownVector * 100.f;
 
-	TeleportArrowActor->SetActorLocation(NavLocationStruct.Location);
+	bool bRayTraceHit = GetWorld()->LineTraceSingleByChannel(OutHit, NavLocationStruct.Location, EndLocation, TeleportCollisionChannel);
+	if (bRayTraceHit)
+	{
+		TeleportArrowActor->SetActorLocation(OutHit.Location);
+
+		// Rotating arrow relative to motion controller and joystick input
+		if (OwningMotionController)
+		{
+			auto ControllerWorldYaw = OwningMotionController->GetControllerWorldOriginRotation().Yaw;
+			
+			auto InputLocalRotation = FVector(-InputX, InputY, 0.f).Rotation();
+			auto InputWorldRotation = FRotator(0.f, InputLocalRotation.Yaw - 90.f + ControllerWorldYaw, 0.f);
+
+			TeleportArrowActor->SetActorRotation(InputWorldRotation);
+		}
+
+		TeleportArrowActor->SetActorHiddenInGame(false);
+	}
+	else
+	{
+		TeleportArrowActor->SetActorHiddenInGame(true);
+	}
 }
 
 void UVRTeleportLogic::OnAssetLoaded()

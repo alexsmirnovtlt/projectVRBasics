@@ -152,26 +152,47 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 
 void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 {
-	// TODO That is need to be fixed because its rotates pawn too
+	// Main problem is we cant just rotate Camera component. So we are making that root component rotates around current camera position so camera may stay in the same place but change its rotation because of a root component 
+	// If we just rotate Camera component or root, if we are not standing right at 0,0,0 local position in the real world, we wil be changing position as we rotate
 
-	FRotator AdditionalRotation = FRotator(0, YawToAdd, 0);
-	PawnRootComponent->AddLocalRotation(AdditionalRotation);
+	FVector MainCameraLocationProjected = MainCamera->GetComponentLocation() * FVector(1.f, 1.f, 0.f);
+	FVector RootMoveDirection = MainCameraLocationProjected - GetActorLocation();
+	FVector RotatedRootMoveDirection = FRotator(0.f, YawToAdd, 0.f).RotateVector(RootMoveDirection);
+
+	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection);
+	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f));
 }
 
 void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition)
 {
-	SetActorLocation(NewLocation);
-
-	// TODO Change like AddCameraYawRotation
-
-	if (bResetLocalPosition)
+	if (!bResetLocalPosition)
 	{
-		FVector NewPosition = FVector(0, 0, MainCamera->GetRelativeLocation().Z);
-		MainCamera->SetRelativeLocation(NewPosition);
+		// Just Teleports Pawn to NewLocation
+		SetActorLocation(NewLocation);
+		SetActorRotation(NewRotation);
+	}
+	else
+	{
+		// Same problem as AddCameraYawRotation(). We need to move our Root so Camera matches new location (not Root).
+		FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
+		FVector RotatedDirection = NewRotation.RotateVector(LocalRootMoveDirection);
+
+		SetActorLocation(NewLocation - RotatedDirection);
+		SetActorRotation(NewRotation);
 	}
 }
 
-FName AVirtualRealityPawn::GetCurrentControllersTypeName()
+FName AVirtualRealityPawn::GetCurrentControllersTypeName() const
 {
 	return CurrentControllersTypeName;
+}
+
+FVector AVirtualRealityPawn::GetCameraRelativeLocation() const
+{
+	return MainCamera->GetRelativeLocation();
+}
+
+FRotator AVirtualRealityPawn::GetCameraRelativeRotation() const
+{
+	return MainCamera->GetRelativeRotation();
 }
