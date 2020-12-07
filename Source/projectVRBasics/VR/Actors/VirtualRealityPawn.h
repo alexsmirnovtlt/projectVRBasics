@@ -11,6 +11,7 @@ class UCameraComponent;
 class IXRTrackingSystem;
 class AVirtualRealityMotionController;
 
+struct FStreamableHandle;
 
 USTRUCT(Blueprintable)
 struct FControllerType
@@ -36,6 +37,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Destroyed() override;
 
 public:	
 	//virtual void Tick(float DeltaTime) override;
@@ -48,7 +50,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	void AddCameraYawRotation(float YawToAdd); // used in teleport state when player may move view left or right. Pawn itself should not be affected by this view change
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	void TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition = true); //  used in teleport state when player teleports
+	void TeleportToLocation(FVector NewLocation, FRotator NewRotation); //  used in teleport state when player teleports
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	FVector GetCameraRelativeLocation() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
@@ -80,8 +82,15 @@ protected:
 	void CreateMotionController(bool bLeft, UClass* ClassToCreate);
 
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")
-	bool SwitchMotionControllers(FName NewProfileName);
+	bool SwitchMotionControllersByName(FName NewProfileName);
+	UFUNCTION(BlueprintCallable, Category = "VR Setup")
+	void SwitchMotionControllersByClass(TSoftClassPtr<AVirtualRealityMotionController> LeftHandClassSoftObjPtr, TSoftClassPtr<AVirtualRealityMotionController> RightHandClassSoftObjPtr);
 
 private:
 	FName StartupLevelName = TEXT("StartUpVRMap");
+
+	void OnHandAssetLoadDone(bool bLeft, bool bUseForBothHands);
+
+	TSharedPtr<FStreamableHandle> LeftHandStreamableHandle;
+	TSharedPtr<FStreamableHandle> RightHandStreamableHandle;
 };

@@ -78,7 +78,6 @@ void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> 
 		if (PairedControllerReference)
 		{
 			PairControllers(PairedControllerReference->GetOwningMotionController());
-			//trollerState->SetOtherControllerReference();
 		}
 
 		if (NotifyPairedControllerIfAble)
@@ -88,7 +87,7 @@ void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> 
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Class %s was not defined on %s. Empty State was created instead. Input will not work"), *NewStateClass.Get()->GetClass()->GetName(), *this->GetName());
+		UE_LOG(LogTemp, Error, TEXT("Trying to create undefined state on %s. Empty State was created instead. Input will not work"), *this->GetName());
 		ControllerState = NewObject<UControllerState>();
 	}
 }

@@ -8,6 +8,7 @@
 #include "Components/SceneComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/AssetManager.h"
 #include "IXRTrackingSystem.h"
 #include "IXRSystemAssets.h"
 #include "Engine/World.h"
@@ -43,6 +44,19 @@ void AVirtualRealityPawn::BeginPlay()
 	InitMotionControllers(*TrackingSystem);
 }
 
+void AVirtualRealityPawn::Destroyed()
+{
+	// Releasing resources that belong to current hands. TODO check maybe its released automatically when StreamableHandle gets destroyed
+	if (LeftHandStreamableHandle.IsValid())
+	{
+		LeftHandStreamableHandle.Get()->ReleaseHandle();
+	}
+	if (RightHandStreamableHandle.IsValid())
+	{
+		RightHandStreamableHandle.Get()->ReleaseHandle();
+	}
+}
+
 bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem& TrackingSystem)
 {
 	uint32 HMDCount = TrackingSystem.CountTrackedDevices(EXRTrackedDeviceType::HeadMountedDisplay);
@@ -61,13 +75,11 @@ bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem& TrackingSystem)
 
 void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem& TrackingSystem)
 {
+	// Either creating hands that defined in StartingControllerName or getting headset info and creating controllers using that info
 	bool bSuccessControllersCreation = false;
 
-	if (!StartingControllerName.IsNone())
-	{
-		bSuccessControllersCreation = SwitchMotionControllers(StartingControllerName);
-	}
-
+	if (!StartingControllerName.IsNone()) bSuccessControllersCreation = SwitchMotionControllersByName(StartingControllerName);
+	
 	if(!bSuccessControllersCreation)
 	{
 		FString HeadsetInfo = TrackingSystem.GetVersionString();
@@ -75,34 +87,22 @@ void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem& TrackingSyste
 		{
 			if (HeadsetInfo.Contains(HeadsetType.HeadsetName.ToString()))
 			{
-				bSuccessControllersCreation = SwitchMotionControllers(HeadsetType.HeadsetName);
+				bSuccessControllersCreation = SwitchMotionControllersByName(HeadsetType.HeadsetName);
 			}
 		}
 	}
 
-	if (!bSuccessControllersCreation)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Could not find Motion Controller Class to Spawn. Check StartingControllerName and/or ControllerTypes fields at %s"), *this->GetClass()->GetName());
-	}
+	if (!bSuccessControllersCreation) UE_LOG(LogTemp, Error, TEXT("Could not find Motion Controller Class to Spawn. Check StartingControllerName and/or ControllerTypes fields at %s"), *this->GetClass()->GetName());
 }
 
-bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
+bool AVirtualRealityPawn::SwitchMotionControllersByName(FName NewProfileName)
 {
 	for (auto& HeadsetType : ControllerTypes)
 	{
 		if (HeadsetType.HeadsetName.IsEqual(NewProfileName))
 		{
 			CurrentControllersTypeName = NewProfileName;
-
-			auto LeftHandClass = HeadsetType.LeftController.LoadSynchronous();
-			auto RightHandClass = HeadsetType.RightController.LoadSynchronous();
-			if (ensure(LeftHandClass && RightHandClass))
-			{
-				CreateMotionController(true, LeftHandClass);
-				CreateMotionController(false, RightHandClass);
-
-				LeftHand->PairControllers(RightHand);
-			}
+			SwitchMotionControllersByClass(HeadsetType.LeftController, HeadsetType.RightController);
 
 			return true;
 		}
@@ -112,20 +112,94 @@ bool AVirtualRealityPawn::SwitchMotionControllers(FName NewProfileName)
 	return false;
 }
 
+void AVirtualRealityPawn::SwitchMotionControllersByClass(TSoftClassPtr<AVirtualRealityMotionController> LeftHandClassSoftObjPtr, TSoftClassPtr<AVirtualRealityMotionController> RightHandClassSoftObjPtr)
+{
+	// Removing previous controllers and notifying their states to exit
+	if (LeftHand)
+	{
+		auto ControllerState = LeftHand->GetControllerState();
+		if (ControllerState)
+		{
+			ControllerState->OnStateExit();
+		}
+		if (LeftHandStreamableHandle.IsValid())
+		{
+			LeftHandStreamableHandle.Get()->ReleaseHandle();
+		}
+		LeftHand->Destroy();
+	}
+	if (RightHand)
+	{
+		auto ControllerState = RightHand->GetControllerState();
+		if (ControllerState)
+		{
+			ControllerState->OnStateExit();
+		}
+		if (RightHandStreamableHandle.IsValid())
+		{
+			RightHandStreamableHandle.Get()->ReleaseHandle();
+		}
+		RightHand->Destroy();
+	}
+
+	// Async loading our hand class. If same class used for both hands, loading it once
+	auto AssetManager = UAssetManager::GetIfValid();
+	if (AssetManager)
+	{
+		FStreamableManager& StreamableManager = AssetManager->GetStreamableManager();
+
+		if (LeftHandClassSoftObjPtr.GetAssetName().Equals(RightHandClassSoftObjPtr.GetAssetName()))
+		{
+			FSimpleDelegate HandClassDelegate = FStreamableDelegate::CreateUObject(this, &AVirtualRealityPawn::OnHandAssetLoadDone, true, true);
+			LeftHandStreamableHandle = StreamableManager.RequestAsyncLoad(LeftHandClassSoftObjPtr.ToSoftObjectPath(), HandClassDelegate);
+		}
+		else
+		{
+			FSimpleDelegate HandClassDelegate = FStreamableDelegate::CreateUObject(this, &AVirtualRealityPawn::OnHandAssetLoadDone, true, false);
+			LeftHandStreamableHandle = StreamableManager.RequestAsyncLoad(LeftHandClassSoftObjPtr.ToSoftObjectPath(), HandClassDelegate);
+
+			HandClassDelegate = FStreamableDelegate::CreateUObject(this, &AVirtualRealityPawn::OnHandAssetLoadDone, false, false);
+			RightHandStreamableHandle = StreamableManager.RequestAsyncLoad(RightHandClassSoftObjPtr.ToSoftObjectPath(), HandClassDelegate);
+		}
+	}
+}
+
+void AVirtualRealityPawn::OnHandAssetLoadDone(bool bLeft, bool bUseForBothHands)
+{
+	UClass* ClassToCreate = nullptr;
+
+	if (bLeft && LeftHandStreamableHandle.Get())
+	{
+		if (LeftHandStreamableHandle.Get()->HasLoadCompleted())
+		{
+			ClassToCreate = Cast<UClass>(LeftHandStreamableHandle.Get()->GetLoadedAsset());
+
+			// creating the same controller for the right hand too
+			if (bUseForBothHands) CreateMotionController(false, ClassToCreate);
+		}
+	}
+	else if (!bLeft && RightHandStreamableHandle.Get())
+	{
+		if (RightHandStreamableHandle.Get()->HasLoadCompleted())
+		{
+			ClassToCreate = Cast<UClass>(RightHandStreamableHandle.Get()->GetLoadedAsset());
+		}
+	}
+
+	CreateMotionController(bLeft, ClassToCreate);
+
+	if (LeftHand && RightHand)
+	{
+		LeftHand->PairControllers(RightHand);
+	}
+}
+
 void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCreate)
 {
+	if (!ClassToCreate) return;
+
 	if (bLeft)
 	{
-		if (LeftHand)
-		{
-			auto ControllerState = LeftHand->GetControllerState();
-			if (ControllerState)
-			{
-				ControllerState->OnStateExit();
-			}
-			LeftHand->Destroy();
-		}
-
 		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		LeftHand->AttachToComponent(RootComponent, AttachmentRules);
 
@@ -133,16 +207,6 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 	}
 	else
 	{
-		if (RightHand)
-		{
-			auto ControllerState = RightHand->GetControllerState();
-			if (ControllerState)
-			{
-				ControllerState->OnStateExit();
-			}
-			RightHand->Destroy();
-		}
-
 		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		RightHand->AttachToComponent(RootComponent, AttachmentRules);
 		
@@ -163,23 +227,15 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f));
 }
 
-void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation, bool bResetLocalPosition)
+void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation)
 {
-	if (!bResetLocalPosition)
-	{
-		// Just Teleports Pawn to NewLocation
-		SetActorLocation(NewLocation);
-		SetActorRotation(NewRotation);
-	}
-	else
-	{
-		// Same problem as AddCameraYawRotation(). We need to move our Root so Camera matches new location (not Root).
-		FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
-		FVector RotatedDirection = NewRotation.RotateVector(LocalRootMoveDirection);
+	// Same problem as AddCameraYawRotation(). We need to move our Root so Camera matches new location (not Root).
 
-		SetActorLocation(NewLocation - RotatedDirection);
-		SetActorRotation(NewRotation);
-	}
+	FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
+	FVector RotatedDirection = (NewRotation).RotateVector(LocalRootMoveDirection);
+
+	SetActorLocation(NewLocation - RotatedDirection);
+	SetActorRotation(NewRotation);
 }
 
 FName AVirtualRealityPawn::GetCurrentControllersTypeName() const

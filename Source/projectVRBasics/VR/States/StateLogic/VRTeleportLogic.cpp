@@ -6,36 +6,37 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "NavigationSystem.h"
+#include "Engine/AssetManager.h"
 #include "Kismet/GameplayStatics.h"
-#include "Engine/StreamableManager.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 #include "GameFramework/PlayerController.h"
 
-#include "../../../General/GameInstances/GameInstWithStreamableManager.h"
 #include "../../../VR/Actors/VirtualRealityMotionController.h"
 #include "../../../VR/Actors/VirtualRealityPawn.h"
 
 
 void UVRTeleportLogic::Initialize(AVirtualRealityMotionController* MotionController)
 {
-	auto GameInstance = UGameplayStatics::GetGameInstance(this);
-	if (!ensure(GameInstance && MotionController && GetWorld())) return;
+	if (!ensure(MotionController && GetWorld())) return;
 
 	OwningMotionController = MotionController;
-	SplineComponent = OwningMotionController->GetSplineComponent();
 
+	SplineComponent = OwningMotionController->GetSplineComponent();
 	NavigationSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 
-	auto GameInstanceWithStreamableManager = Cast<UGameInstWithStreamableManager>(GameInstance);
-	if (!ensure(GameInstanceWithStreamableManager && SplineComponent && NavigationSystem)) return;
+	if (!ensure(SplineComponent && NavigationSystem)) return;
 	
 	// Async loading needed resources
-	FStreamableManager& StreamableManager = GameInstanceWithStreamableManager->GetStreamableManager();
-	
-	TeleportArrowHandle = StreamableManager.RequestAsyncLoad(TeleportArrowClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
-	TeleportBeamHandle = StreamableManager.RequestAsyncLoad(TeleportBeamPartClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
+	auto AssetManager = UAssetManager::GetIfValid();
+	if (AssetManager)
+	{
+		FStreamableManager& StreamableManager = AssetManager->GetStreamableManager();
+
+		TeleportArrowHandle = StreamableManager.RequestAsyncLoad(TeleportArrowClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
+		TeleportBeamHandle = StreamableManager.RequestAsyncLoad(TeleportBeamPartClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &UVRTeleportLogic::OnAssetLoaded));
+	}
 }
 
 void UVRTeleportLogic::UpdateTeleportArc(float HorizontalInput, float VerticalInput, FVector StartLocation, FRotator StartRotation)
@@ -115,7 +116,7 @@ void UVRTeleportLogic::OnFadeTimerEnd()
 	auto VRPawn = OwningMotionController->GetVRPawn();
 	if (VRPawn && VRPawn->GetController())
 	{
-		VRPawn->TeleportToLocation(TeleportArrowActor->GetActorLocation(), TeleportArrowActor->GetActorRotation(), true);
+		VRPawn->TeleportToLocation(TeleportArrowActor->GetActorLocation(), TeleportArrowActor->GetActorRotation());
 
 		auto PlayerController = Cast<APlayerController>(VRPawn->GetController());
 		if (PlayerController)
@@ -214,8 +215,6 @@ void UVRTeleportLogic::OnAssetLoaded()
 
 void UVRTeleportLogic::HandleDestruction()
 {
-	// TODO Check if thats enough
-
 	if (TeleportArrowHandle.IsValid())
 	{
 		TeleportArrowHandle.Get()->ReleaseHandle();
