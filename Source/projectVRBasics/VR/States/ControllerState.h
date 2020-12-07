@@ -48,6 +48,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
 	void Input_Axis_Thumbstick(float Horizontal, float Vertical);
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
+	void Input_Axis_Trigger(float Value);
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
+	void Input_Axis_Grip(float Value);
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
 	void Input_Button_Thumbstick(EButtonActionType ActionType);
