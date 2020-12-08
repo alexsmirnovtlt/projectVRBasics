@@ -95,6 +95,12 @@ void UVRTeleportLogic::PerformTeleport()
 	auto VRPawn = OwningMotionController->GetVRPawn();
 	if (VRPawn && VRPawn->GetController())
 	{
+		if (CameraFadeDurationSec > 0.f)
+		{
+			OnFadeTimerEnd();
+			return;
+		}
+
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerHandle_CameraFade,
 			this,
@@ -119,7 +125,7 @@ void UVRTeleportLogic::OnFadeTimerEnd()
 		VRPawn->TeleportToLocation(TeleportArrowActor->GetActorLocation(), TeleportArrowActor->GetActorRotation());
 
 		auto PlayerController = Cast<APlayerController>(VRPawn->GetController());
-		if (PlayerController)
+		if (PlayerController && CameraFadeDurationSec > 0.f)
 		{
 			PlayerController->PlayerCameraManager->StartCameraFade(1.f, 0.f, CameraFadeDurationSec, FLinearColor::Black);
 		}

@@ -50,7 +50,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Setup")
 	int32 InitialSplineMeshPoolSize = 20;
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
-	float CameraFadeDurationSec = 0.1f;
+	float CameraFadeDurationSec = 0.06f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	float TeleportProjectileRadius = 3.f;
