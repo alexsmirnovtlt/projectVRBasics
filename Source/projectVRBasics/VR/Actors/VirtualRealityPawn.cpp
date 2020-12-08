@@ -23,6 +23,7 @@ AVirtualRealityPawn::AVirtualRealityPawn()
 	// Root
 	PawnRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RootComponent = PawnRootComponent;
+
 	// VR Camera
 	MainCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	MainCamera->AttachTo(RootComponent);

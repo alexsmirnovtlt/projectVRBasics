@@ -55,7 +55,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup")
 	TSubclassOf<UControllerState> StartStateClass;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadonly)
 	class UMotionControllerComponent* MotionController;
 
 	UPROPERTY(BlueprintReadonly)
