@@ -24,9 +24,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	//virtual void Tick(float DeltaTime) override;
 
-	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource);
+	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource, bool IsPrimary);
 	void PairControllers(AVirtualRealityMotionController* AnotherMotionController);
 
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
@@ -55,14 +54,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup")
 	TSubclassOf<UControllerState> StartStateClass;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadonly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadonly, Category = "Motion Controller")
 	class UMotionControllerComponent* MotionController;
 
-	UPROPERTY(BlueprintReadonly)
+	UPROPERTY(BlueprintReadonly, Category = "Motion Controller")
 	AVirtualRealityPawn* OwningVRPawn;
 
-	UPROPERTY(BlueprintReadonly)
+	UPROPERTY(BlueprintReadonly, Category = "Motion Controller")
 	UControllerState* ControllerState;
+
+	UPROPERTY(BlueprintReadonly, Category = "Motion Controller")
+	bool IsControllerPrimary;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
+	void OnDoneInitByPawn();
 
 	UPROPERTY()
 	USplineComponent* SplineComponent;

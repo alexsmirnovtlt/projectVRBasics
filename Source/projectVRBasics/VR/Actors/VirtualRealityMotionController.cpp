@@ -32,12 +32,15 @@ void AVirtualRealityMotionController::BeginPlay()
 	ChangeToDefaultState(false);
 }
 
-void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource)
+void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource, bool IsPrimary)
 {
 	OwningVRPawn = PawnOwner;
 	MotionController->SetTrackingMotionSource(MotionSource);
+	IsControllerPrimary = IsPrimary;
 
 	SetOwner(OwningVRPawn);
+
+	OnDoneInitByPawn();
 }
 
 void AVirtualRealityMotionController::PairControllers(AVirtualRealityMotionController* AnotherMotionController)

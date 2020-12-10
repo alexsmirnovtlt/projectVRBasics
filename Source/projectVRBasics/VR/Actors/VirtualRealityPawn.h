@@ -36,14 +36,12 @@ public:
 	AVirtualRealityPawn();
 
 protected:
+
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-public:	
-	//virtual void Tick(float DeltaTime) override;
-	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 public:
+
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")
 	FName GetCurrentControllersTypeName() const;
 
@@ -55,11 +53,15 @@ public:
 	FVector GetCameraRelativeLocation() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	FRotator GetCameraRelativeRotation() const;
+	
+	// bool that can be accessible in Motion Controller BPs
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VR Setup")
+	bool RightControllerIsPrimary;
 
 protected:
-	// If not empty, overrides controller type that will be used from ControllerTypes. If is empty, headset info will be used to determine Headset Type. (f.e if we use same hands on any Headset, we define it here and in ControllerTypes)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
-	FName StartingControllerName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup") // If not empty, overrides controller type that will be used and gets value from ControllerTypes. 
+	FName StartingControllerName;  // If is empty, headset info will be used to determine Headset Type. (f.e if we use same hands on any Headset, we define it here and in ControllerTypes)
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	TArray<FControllerType> ControllerTypes;
@@ -87,7 +89,9 @@ protected:
 	void SwitchMotionControllersByClass(TSoftClassPtr<AVirtualRealityMotionController> LeftHandClassSoftObjPtr, TSoftClassPtr<AVirtualRealityMotionController> RightHandClassSoftObjPtr);
 
 private:
-	FName StartupLevelName = TEXT("StartUpVRMap");
+
+	UPROPERTY(EditDefaultsOnly, Category = "Headset Error Handling")
+	FName StartupLevelName = TEXT("StartUpVRMap"); // If headset is not found, load this level
 
 	void OnHandAssetLoadDone(bool bLeft, bool bUseForBothHands);
 

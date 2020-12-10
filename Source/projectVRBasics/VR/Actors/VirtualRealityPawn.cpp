@@ -30,6 +30,10 @@ AVirtualRealityPawn::AVirtualRealityPawn()
 
 	// Cached attachment properties for controllers creation
 	AttachmentRules.ScaleRule = EAttachmentRule::KeepWorld;
+
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	RightControllerIsPrimary = true;
 }
 
 void AVirtualRealityPawn::BeginPlay()
@@ -40,9 +44,9 @@ void AVirtualRealityPawn::BeginPlay()
 	if (!ensure(TrackingSystem.Get())) { return; }
 
 	// Check that VR Headset is present and set tracking origin
-	if (!InitHeadset(*TrackingSystem)) return;
+	if (!InitHeadset(*TrackingSystem.Get())) return;
 	// Trying to create motion controlles using StartingControllerName if not none, or detecting Headset type using info from TrackingSystem
-	InitMotionControllers(*TrackingSystem);
+	InitMotionControllers(*TrackingSystem.Get());
 }
 
 void AVirtualRealityPawn::Destroyed()
@@ -204,23 +208,23 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		LeftHand->AttachToComponent(RootComponent, AttachmentRules);
 
-		LeftHand->InitialSetup(this, TEXT("Left"));
+		LeftHand->InitialSetup(this, TEXT("Left"), !RightControllerIsPrimary);
 	}
 	else
 	{
 		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
 		RightHand->AttachToComponent(RootComponent, AttachmentRules);
 		
-		RightHand->InitialSetup(this, TEXT("Right"));
+		RightHand->InitialSetup(this, TEXT("Right"), RightControllerIsPrimary);
 	}
 }
 
 void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 {
-	// Main problem is we cant just rotate Camera component. So we are making that root component rotates around current camera position so camera may stay in the same place but change its rotation because of a root component 
-	// If we just rotate Camera component or root, if we are not standing right at 0,0,0 local position in the real world, we wil be changing position as we rotate
+	// Main problem is we cant just rotate Camera component. So we are making that root component rotates around current camera position so camera may stay in the same place but change root rotation because of a root component 
+	// If we just rotate Camera component or root, if we are not standing right at 0,0 local position in the real world, we wil be changing position as we rotate
 
-	FVector MainCameraLocationProjected = MainCamera->GetComponentLocation() * FVector(1.f, 1.f, 0.f);
+	FVector MainCameraLocationProjected = MainCamera->GetComponentLocation() * FVector(1.f, 1.f, 0.f); // Projecting to X, Y, dont need Z
 	FVector RootMoveDirection = MainCameraLocationProjected - GetActorLocation();
 	FVector RotatedRootMoveDirection = FRotator(0.f, YawToAdd, 0.f).RotateVector(RootMoveDirection);
 
