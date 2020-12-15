@@ -10,5 +10,7 @@ public class projectVRBasicsTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.AddRange( new string[] { "projectVRBasics" } );
+
+		ProjectDefinitions.Add("UE4_PROJECT_STEAMSHIPPINGID=480");
 	}
 }
