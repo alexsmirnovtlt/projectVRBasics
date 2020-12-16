@@ -4,14 +4,15 @@
 #include "VirtualRealityPawn.h"
 
 #include "VirtualRealityMotionController.h"
+#include "Components/CapsuleComponent.h"
 #include "MotionControllerComponent.h"
-#include "Components/SceneComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/AssetManager.h"
 #include "IXRTrackingSystem.h"
 #include "IXRSystemAssets.h"
 #include "Engine/World.h"
+#include "TimerManager.h"
 
 #include "../States/ControllerState.h"
 
@@ -21,18 +22,25 @@ AVirtualRealityPawn::AVirtualRealityPawn()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Root
-	PawnRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
+	PawnRootComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RootComponent"));
+	PawnRootComponent->SetCapsuleSize(40.f, 92.f);
 	RootComponent = PawnRootComponent;
 
+	VRRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("VRRootComponent"));
+	VRRootComponent->SetupAttachment(RootComponent);
+	VRRootComponent->SetRelativeLocation(FVector(0.f, 0.f, -1 * PawnRootComponent->GetScaledCapsuleHalfHeight()));
+	
 	// VR Camera
 	MainCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	MainCamera->AttachTo(RootComponent);
+	MainCamera->SetupAttachment(VRRootComponent);
+	MainCamera->SetRelativeLocation(FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()));
 
 	// Cached attachment properties for controllers creation
 	AttachmentRules.ScaleRule = EAttachmentRule::KeepWorld;
 
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+	StartFadeTimeSec = 1.f;
 	RightControllerIsPrimary = true;
 }
 
@@ -40,13 +48,20 @@ void AVirtualRealityPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TSharedPtr<IXRTrackingSystem, ESPMode::ThreadSafe> TrackingSystem = GEngine->XRSystem;
-	if (!ensure(TrackingSystem.Get())) { return; }
+	// Fading screen because our camera probably wont be exactly at starting position
+	if (auto PlayerController = Cast<APlayerController>(GetController()))
+	{
+		PlayerController->PlayerCameraManager->SetManualCameraFade(1.0f, FLinearColor::Black, false);
+	}
 
-	// Check that VR Headset is present and set tracking origin
-	if (!InitHeadset(*TrackingSystem.Get())) return;
-	// Trying to create motion controlles using StartingControllerName if not none, or detecting Headset type using info from TrackingSystem
-	InitMotionControllers(*TrackingSystem.Get());
+	// Starting up timer to wait for headset to update its position
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_StartCameraFade,
+		this,
+		&AVirtualRealityPawn::OnStartTimerEnd,
+		StartFadeTimeSec,
+		false
+	);
 }
 
 void AVirtualRealityPawn::Destroyed()
@@ -59,6 +74,25 @@ void AVirtualRealityPawn::Destroyed()
 	if (RightHandStreamableHandle.IsValid())
 	{
 		RightHandStreamableHandle.Get()->ReleaseHandle();
+	}
+}
+
+void AVirtualRealityPawn::OnStartTimerEnd()
+{
+	TSharedPtr<IXRTrackingSystem, ESPMode::ThreadSafe> TrackingSystem = GEngine->XRSystem;
+	if (!ensure(TrackingSystem.IsValid())) { return; }
+
+	TeleportToLocation(VRRootComponent->GetComponentLocation(), GetActorRotation()); // so player will be standing at spawn location even if he is not standing at the center of tracked zone irl
+
+	// Check that VR Headset is present and set tracking origin
+	if (!InitHeadset(*TrackingSystem.Get())) return;
+	
+	// Trying to create motion controlles using StartingControllerName if not none, or detecting Headset type using info from TrackingSystem
+	InitMotionControllers(*TrackingSystem.Get());
+
+	if (auto PlayerController = Cast<APlayerController>(GetController()))
+	{
+		PlayerController->PlayerCameraManager->StartCameraFade(1.f, 0.f, StartFadeTimeSec, FLinearColor::Black, false, true);
 	}
 }
 
@@ -203,17 +237,23 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 {
 	if (!ClassToCreate) return;
 
+	FVector HandSpawnLocation = MainCamera->GetComponentLocation();
+	//HandSpawnLocation.Z = (HandSpawnLocation.Z - VRRootComponent->GetComponentLocation().Z) / 2.f;
+	HandSpawnLocation.Z = 30.f;
+	
 	if (bLeft)
 	{
-		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
-		LeftHand->AttachToComponent(RootComponent, AttachmentRules);
-
+		// if hand will be spawned with FVector::ZeroVector location, it might stuck underneath the floor forever
+		
+		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, MainCamera->GetComponentLocation(), MainCamera->GetComponentRotation());
+		LeftHand->AttachToComponent(VRRootComponent, AttachmentRules);
+		
 		LeftHand->InitialSetup(this, TEXT("Left"), !RightControllerIsPrimary);
 	}
 	else
 	{
-		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, FVector::ZeroVector, FRotator::ZeroRotator);
-		RightHand->AttachToComponent(RootComponent, AttachmentRules);
+		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, HandSpawnLocation, MainCamera->GetComponentRotation());
+		RightHand->AttachToComponent(VRRootComponent, AttachmentRules);
 		
 		RightHand->InitialSetup(this, TEXT("Right"), RightControllerIsPrimary);
 	}
@@ -235,11 +275,11 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation)
 {
 	// Same problem as AddCameraYawRotation(). We need to move our Root so Camera matches new location (not Root).
-
+	
 	FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
-	FVector RotatedDirection = (NewRotation).RotateVector(LocalRootMoveDirection);
+	FVector RotatedDirection = NewRotation.RotateVector(LocalRootMoveDirection);
 
-	SetActorLocation(NewLocation - RotatedDirection);
+	SetActorLocation(NewLocation - RotatedDirection + FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()));
 	SetActorRotation(NewRotation);
 }
 

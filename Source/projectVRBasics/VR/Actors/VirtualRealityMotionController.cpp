@@ -39,7 +39,7 @@ void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwne
 	IsControllerPrimary = IsPrimary;
 
 	SetOwner(OwningVRPawn);
-
+	
 	OnDoneInitByPawn();
 }
 
