@@ -53,15 +53,16 @@ protected:
 	float CameraFadeDurationSec = 0.06f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
-	float TeleportProjectileRadius = 3.f;
+	float TeleportProjectileRadius = 1.f;
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	float TeleportProjectileSpeed = 1400.f;
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	float TeleportSimulationTime = 1.f;
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	bool TeleportTraceComplex = false;
+	// Check ECollisionChannel enum
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
-	TEnumAsByte<ECollisionChannel> TeleportCollisionChannel = ECollisionChannel::ECC_WorldStatic;
+	uint8 TeleportCollisionChannel = 0;
 	UPROPERTY(EditDefaultsOnly, Category = "ProjectilePathParams")
 	FVector NavMeshCheckExtent = FVector(100, 100, 100);
 

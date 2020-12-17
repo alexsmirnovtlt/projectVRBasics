@@ -227,36 +227,21 @@ void AVirtualRealityPawn::OnHandAssetLoadDone(bool bLeft, bool bUseForBothHands)
 
 	CreateMotionController(bLeft, ClassToCreate);
 
-	if (LeftHand && RightHand)
-	{
-		LeftHand->PairControllers(RightHand);
-	}
+	if (LeftHand && RightHand) LeftHand->PairControllers(RightHand);
 }
 
 void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCreate)
 {
 	if (!ClassToCreate) return;
 
-	FVector HandSpawnLocation = MainCamera->GetComponentLocation();
-	//HandSpawnLocation.Z = (HandSpawnLocation.Z - VRRootComponent->GetComponentLocation().Z) / 2.f;
-	HandSpawnLocation.Z = 30.f;
-	
-	if (bLeft)
-	{
-		// if hand will be spawned with FVector::ZeroVector location, it might stuck underneath the floor forever
-		
-		LeftHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, MainCamera->GetComponentLocation(), MainCamera->GetComponentRotation());
-		LeftHand->AttachToComponent(VRRootComponent, AttachmentRules);
-		
-		LeftHand->InitialSetup(this, TEXT("Left"), !RightControllerIsPrimary);
-	}
-	else
-	{
-		RightHand = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, HandSpawnLocation, MainCamera->GetComponentRotation());
-		RightHand->AttachToComponent(VRRootComponent, AttachmentRules);
-		
-		RightHand->InitialSetup(this, TEXT("Right"), RightControllerIsPrimary);
-	}
+	auto NewHandController = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, MainCamera->GetComponentLocation(), MainCamera->GetComponentRotation());
+	NewHandController->AttachToComponent(VRRootComponent, AttachmentRules);
+
+	FName HandName = bLeft ? TEXT("Left") : TEXT("Right");
+	NewHandController->InitialSetup(this, HandName, !RightControllerIsPrimary);
+
+	if (bLeft) LeftHand = NewHandController;
+	else RightHand = NewHandController;
 }
 
 void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)

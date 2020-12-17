@@ -51,7 +51,7 @@ void UVRTeleportLogic::UpdateTeleportArc(float HorizontalInput, float VerticalIn
 		StartLocation,
 		StartRotation.Vector().GetSafeNormal() * TeleportProjectileSpeed,
 		TeleportSimulationTime,
-		TeleportCollisionChannel,
+		(ECollisionChannel)TeleportCollisionChannel,
 		SplineComponent->GetOwner()
 	);
 	ProjectilePathParams.bTraceComplex = TeleportTraceComplex;
@@ -175,7 +175,7 @@ void UVRTeleportLogic::UpdateTargetTeleportLocation(bool bHit, FNavLocation NavL
 	FHitResult OutHit;
 	FVector EndLocation = NavLocationStruct.Location + FVector::DownVector * 100.f;
 
-	bool bRayTraceHit = GetWorld()->LineTraceSingleByChannel(OutHit, NavLocationStruct.Location, EndLocation, TeleportCollisionChannel);
+	bool bRayTraceHit = GetWorld()->LineTraceSingleByChannel(OutHit, NavLocationStruct.Location, EndLocation, (ECollisionChannel)TeleportCollisionChannel);
 	if (bRayTraceHit)
 	{
 		TeleportArrowActor->SetActorLocation(OutHit.Location);

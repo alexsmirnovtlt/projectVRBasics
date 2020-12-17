@@ -30,7 +30,8 @@ public:
 };
 
 /**
- * 
+ * This is a slightly rewritten version of 
+ * https://github.com/mordentral/VRExpPluginExample/blob/4.25-Locked/Plugins/VRExpansionPlugin/VRExpansionPlugin/Source/VRExpansionPlugin/Public/Misc/VREPhysicalAnimationComponent.h
  */
 UCLASS(meta = (BlueprintSpawnableComponent), ClassGroup = Physics)
 class PROJECTVRBASICS_API UVRHandPhysicalAnimationComponent : public UPhysicalAnimationComponent
