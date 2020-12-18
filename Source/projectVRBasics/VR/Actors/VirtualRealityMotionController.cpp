@@ -32,10 +32,14 @@ void AVirtualRealityMotionController::BeginPlay()
 	ChangeToDefaultState(false);
 }
 
-void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, FName MotionSource, bool IsPrimary)
+void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, bool IsLeft, bool IsPrimary)
 {
 	OwningVRPawn = PawnOwner;
-	MotionController->SetTrackingMotionSource(MotionSource);
+	IsRightController = !IsLeft;
+
+	FName HandName = IsRightController ? TEXT("Right") : TEXT("Left");
+	MotionController->SetTrackingMotionSource(HandName);
+	
 	IsControllerPrimary = IsPrimary;
 
 	SetOwner(OwningVRPawn);
@@ -126,4 +130,9 @@ USplineComponent* AVirtualRealityMotionController::GetSplineComponent_Implementa
 AVirtualRealityPawn* AVirtualRealityMotionController::GetVRPawn() const
 {
 	return OwningVRPawn;
+}
+
+bool AVirtualRealityMotionController::IsRightHandController()
+{
+	return IsRightController;
 }

@@ -54,7 +54,9 @@ public:
 	FVector GetCameraRelativeLocation() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	FRotator GetCameraRelativeRotation() const;
-	
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	FVector GetCameraWorldLocation() const;
+
 	// bool that can be accessible in Motion Controller BPs
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VR Setup")
 	bool RightControllerIsPrimary;

@@ -234,11 +234,10 @@ void AVirtualRealityPawn::CreateMotionController(bool bLeft, UClass* ClassToCrea
 {
 	if (!ClassToCreate) return;
 
-	auto NewHandController = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, MainCamera->GetComponentLocation(), MainCamera->GetComponentRotation());
+	auto NewHandController = GetWorld()->SpawnActor<AVirtualRealityMotionController>(ClassToCreate, GetActorLocation(), FRotator::ZeroRotator);
 	NewHandController->AttachToComponent(VRRootComponent, AttachmentRules);
 
-	FName HandName = bLeft ? TEXT("Left") : TEXT("Right");
-	NewHandController->InitialSetup(this, HandName, !RightControllerIsPrimary);
+	NewHandController->InitialSetup(this, bLeft, !RightControllerIsPrimary);
 
 	if (bLeft) LeftHand = NewHandController;
 	else RightHand = NewHandController;
@@ -255,6 +254,9 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 
 	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection);
 	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f));
+
+	if (LeftHand) LeftHand->OnPawnTeleported(true);
+	if (RightHand) RightHand->OnPawnTeleported(true);
 }
 
 void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation)
@@ -266,6 +268,9 @@ void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRo
 
 	SetActorLocation(NewLocation - RotatedDirection + FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()));
 	SetActorRotation(NewRotation);
+
+	if (LeftHand) LeftHand->OnPawnTeleported(false);
+	if (RightHand) RightHand->OnPawnTeleported(false);
 }
 
 FName AVirtualRealityPawn::GetCurrentControllersTypeName() const
@@ -276,6 +281,11 @@ FName AVirtualRealityPawn::GetCurrentControllersTypeName() const
 FVector AVirtualRealityPawn::GetCameraRelativeLocation() const
 {
 	return MainCamera->GetRelativeLocation();
+}
+
+FVector AVirtualRealityPawn::GetCameraWorldLocation() const
+{
+	return MainCamera->GetComponentLocation();
 }
 
 FRotator AVirtualRealityPawn::GetCameraRelativeRotation() const

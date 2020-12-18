@@ -25,7 +25,7 @@ protected:
 
 public:	
 
-	void InitialSetup(AVirtualRealityPawn* Owner, FName MotionSource, bool IsPrimary);
+	void InitialSetup(AVirtualRealityPawn* Owner, bool IsLeft, bool IsPrimary);
 	void PairControllers(AVirtualRealityMotionController* AnotherMotionController);
 
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
@@ -40,8 +40,14 @@ public:
 	FRotator GetControllerWorldOriginRotation() const;
 	virtual FRotator GetControllerWorldOriginRotation_Implementation() const;
 	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP.
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	USplineComponent* GetSplineComponent() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Motion Controller")
+	bool IsRightHandController();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
+	void OnPawnTeleported(bool bCameraViewOnly);
 
 	UFUNCTION()
 	UControllerState* GetControllerState() const;
@@ -68,6 +74,8 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
 	void OnDoneInitByPawn();
+
+	bool IsRightController;
 
 	UPROPERTY()
 	USplineComponent* SplineComponent;
