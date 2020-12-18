@@ -47,7 +47,9 @@ public:
 	bool IsRightHandController();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
-	void OnPawnTeleported(bool bCameraViewOnly);
+	void OnPawnTeleportStart(bool bCameraViewOnly);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
+	void OnPawnTeleportEnd(bool bCameraViewOnly);
 
 	UFUNCTION()
 	UControllerState* GetControllerState() const;
