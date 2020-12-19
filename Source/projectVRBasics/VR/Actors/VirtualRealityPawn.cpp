@@ -248,8 +248,8 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 	// Main problem is we cant just rotate Camera component. So we are making that root component rotates around current camera position so camera may stay in the same place but change root rotation because of a root component 
 	// If we just rotate Camera component or root, if we are not standing right at 0,0 local position in the real world, we wil be changing position as we rotate
 
-	if (LeftHand) LeftHand->OnPawnTeleportStart(true);
-	if (RightHand) RightHand->OnPawnTeleportStart(true);
+	if (LeftHand) LeftHand->OnPawnTeleport(true, true);
+	if (RightHand) RightHand->OnPawnTeleport(true, true);
 
 	FVector MainCameraLocationProjected = MainCamera->GetComponentLocation() * FVector(1.f, 1.f, 0.f); // Projecting to X, Y, dont need Z
 	FVector RootMoveDirection = MainCameraLocationProjected - GetActorLocation();
@@ -258,16 +258,16 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection);
 	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f));
 
-	if (LeftHand) LeftHand->OnPawnTeleportEnd(true);
-	if (RightHand) RightHand->OnPawnTeleportEnd(true);
+	if (LeftHand) LeftHand->OnPawnTeleport(false, true);
+	if (RightHand) RightHand->OnPawnTeleport(false, true);
 }
 
 void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRotation)
 {
 	// Same problem as AddCameraYawRotation(). We need to move our Root so Camera matches new location (not Root).
 	
-	if (LeftHand) LeftHand->OnPawnTeleportStart(true);
-	if (RightHand) RightHand->OnPawnTeleportStart(true);
+	if (LeftHand) LeftHand->OnPawnTeleport(true, false);
+	if (RightHand) RightHand->OnPawnTeleport(true, false);
 
 	FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
 	FVector RotatedDirection = NewRotation.RotateVector(LocalRootMoveDirection);
@@ -275,8 +275,8 @@ void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRo
 	SetActorLocation(NewLocation - RotatedDirection + FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()));
 	SetActorRotation(NewRotation);
 
-	if (LeftHand) LeftHand->OnPawnTeleportEnd(false);
-	if (RightHand) RightHand->OnPawnTeleportEnd(false);
+	if (LeftHand) LeftHand->OnPawnTeleport(false, false);
+	if (RightHand) RightHand->OnPawnTeleport(false, false);
 }
 
 FName AVirtualRealityPawn::GetCurrentControllersTypeName() const
