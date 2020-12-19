@@ -9,6 +9,7 @@
 
 class UCameraComponent;
 class IXRTrackingSystem;
+class UCapsuleComponent;
 class AVirtualRealityMotionController;
 
 struct FStreamableHandle;
@@ -53,7 +54,9 @@ public:
 	FVector GetCameraRelativeLocation() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	FRotator GetCameraRelativeRotation() const;
-	
+	UFUNCTION(BlueprintCallable, Category = "VR Movement")
+	FVector GetCameraWorldLocation() const;
+
 	// bool that can be accessible in Motion Controller BPs
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VR Setup")
 	bool RightControllerIsPrimary;
@@ -66,8 +69,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
 	TArray<FControllerType> ControllerTypes;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Setup")
+	float StartFadeTimeSec;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USceneComponent* PawnRootComponent;
+	UCapsuleComponent* PawnRootComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* VRRootComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UCameraComponent* MainCamera;
 	UPROPERTY()
@@ -94,6 +102,10 @@ private:
 	FName StartupLevelName = TEXT("StartUpVRMap"); // If headset is not found, load this level
 
 	void OnHandAssetLoadDone(bool bLeft, bool bUseForBothHands);
+	UFUNCTION()
+	void OnStartTimerEnd();
+
+	FTimerHandle TimerHandle_StartCameraFade;
 
 	TSharedPtr<FStreamableHandle> LeftHandStreamableHandle;
 	TSharedPtr<FStreamableHandle> RightHandStreamableHandle;
