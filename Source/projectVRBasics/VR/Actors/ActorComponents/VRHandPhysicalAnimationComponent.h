@@ -43,6 +43,11 @@ public:
 	UVRHandPhysicalAnimationComponent();
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
+	void SetupWeldedBoneDriver();
+	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
+	void RefreshWeldedBoneDriver();
+
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = WeldedBoneDriver)
@@ -52,12 +57,6 @@ protected:
 	float SleepThresholdMultiplier;
 
 	void UpdateWeldedBoneDriver();
-
-	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
-	void SetupWeldedBoneDriver();
-	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
-	void RefreshWeldedBoneDriver();
-
 	void SetupWeldedBoneDriver_Implementation(bool bReInit = false);
 
 	FTransform GetWorldSpaceRefBoneTransform(FReferenceSkeleton& RefSkel, int32 BoneIndex, int32 ParentBoneIndex);
