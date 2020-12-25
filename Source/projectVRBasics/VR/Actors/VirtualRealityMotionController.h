@@ -39,15 +39,19 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	FRotator GetControllerWorldOriginRotation() const;
 	virtual FRotator GetControllerWorldOriginRotation_Implementation() const;
-	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP.
+	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP. So joystick controller will return its MotionController location and hand controler will return its arrow location
 	
+	//UFUNCTION(BlueprintCallable, Category = "Motion Controller")
+	//FTransform GetMotionControllerRelativeTransform() const;
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	USplineComponent* GetSplineComponent() const;
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Motion Controller")
 	bool IsRightHandController();
 
+	virtual void OnPawnTeleport(bool bStarted, bool bCameraViewOnly);
 	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
-	void OnPawnTeleport(bool bStarted, bool bCameraViewOnly);
+	void OnPawnTeleportEvent(bool bStarted, bool bCameraViewOnly);
 
 	UFUNCTION()
 	UControllerState* GetControllerState() const;

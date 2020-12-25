@@ -106,6 +106,11 @@ void AVirtualRealityMotionController::ChangeToDefaultState(bool NotifyPairedCont
 	ChangeState(StartStateClass, NotifyPairedControllerIfAble);
 }
 
+void AVirtualRealityMotionController::OnPawnTeleport(bool bStarted, bool bCameraViewOnly)
+{
+	OnPawnTeleportEvent(bStarted, bCameraViewOnly);
+}
+
 UControllerState* AVirtualRealityMotionController::GetControllerState() const
 {
 	return ControllerState;

@@ -5,15 +5,21 @@
 
 #include "Components/SkeletalMeshComponent.h"
 
-#include "ActorComponents/VRHandPhysicalAnimationComponent.h"
+//#include "ActorComponents/VRHandPhysicalAnimationComponent.h"
 
 AHandActor::AHandActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	HandMass = 10.f;
+	RootBoneName = TEXT("hand_r");
+	PalmSocketName = TEXT("palm_socket");
+	NoCollisionPresetName = TEXT("NoCollision");
+	ActiveCollisionPresetName = TEXT("PhysicsActor");
+	
+	SetTickGroup(ETickingGroup::TG_PrePhysics);
 
-	HandPhysicalAnimationComponent = CreateDefaultSubobject<UVRHandPhysicalAnimationComponent>(TEXT("HandPhysicalAnimationComponent"));
+	//HandPhysicalAnimationComponent = CreateDefaultSubobject<UVRHandPhysicalAnimationComponent>(TEXT("HandPhysicalAnimationComponent"));
 }
 
 void AHandActor::BeginPlay()
@@ -24,16 +30,11 @@ void AHandActor::BeginPlay()
 	if (!HandMesh) return;
 
 	HandMesh->SetUseCCD(true);
+	HandMesh->SetSimulatePhysics(false);
 	HandMesh->SetMassOverrideInKg(NAME_None, HandMass);
-	HandPhysicalAnimationComponent->SetSkeletalMeshComponent(HandMesh);
-	HandPhysicalAnimationComponent->SetupWeldedBoneDriver();
 
-	SetTickGroup(ETickingGroup::TG_PrePhysics);
-}
-
-void AHandActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	//HandPhysicalAnimationComponent->SetSkeletalMeshComponent(HandMesh);
+	//HandPhysicalAnimationComponent->SetupWeldedBoneDriver();
 }
 
 USkeletalMeshComponent* AHandActor::GetSkeletalHandMeshComponent_Implementation() const
@@ -46,4 +47,29 @@ USceneComponent* AHandActor::GetArrowComponent_Implementation() const
 {
 	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetArrowComponent()"), *this->GetClass()->GetFName().ToString());
 	return nullptr;
+}
+
+float AHandActor::GetHandMass() const
+{
+	return HandMass;
+}
+
+FName& AHandActor::GetRootBoneName()
+{
+	return RootBoneName;
+}
+
+FName& AHandActor::GetPalmSocketName()
+{
+	return PalmSocketName;
+}
+
+FName& AHandActor::GetActiveCollisionPresetName()
+{
+	return ActiveCollisionPresetName;
+}
+
+FName& AHandActor::GeNoCollisionPresetName()
+{
+	return NoCollisionPresetName;
 }
