@@ -3,9 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PhysicsEngine/PhysicalAnimationComponent.h"
-
-#include "VRHandPhysicalAnimationComponent.generated.h"
+#include "Components/ActorComponent.h"
+#include "HandCollisionUpdaterComponent.generated.h"
 
 USTRUCT()
 struct FWeldedBoneDriverData
@@ -29,22 +28,24 @@ public:
 	}
 };
 
+class USkeletalMeshComponent;
+
 /**
- * This is a slightly rewritten version of 
+ * This is a slightly rewritten version of
  * https://github.com/mordentral/VRExpPluginExample/blob/4.25-Locked/Plugins/VRExpansionPlugin/VRExpansionPlugin/Source/VRExpansionPlugin/Public/Misc/VREPhysicalAnimationComponent.h
  */
-UCLASS(meta = (BlueprintSpawnableComponent), ClassGroup = Physics)
-class PROJECTVRBASICS_API UVRHandPhysicalAnimationComponent : public UPhysicalAnimationComponent
+UCLASS(meta=(BlueprintSpawnableComponent), ClassGroup = Physics)
+class PROJECTVRBASICS_API UHandCollisionUpdaterComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:
+public:	
+	UHandCollisionUpdaterComponent();
 
-	UVRHandPhysicalAnimationComponent();
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
-	void SetupWeldedBoneDriver();
+	void SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh);
 	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
 	void RefreshWeldedBoneDriver();
 
@@ -60,9 +61,12 @@ protected:
 	void SetupWeldedBoneDriver_Implementation(bool bReInit = false);
 
 	FTransform GetWorldSpaceRefBoneTransform(FReferenceSkeleton& RefSkel, int32 BoneIndex, int32 ParentBoneIndex);
-	FTransform GetRefPoseBoneRelativeTransform(USkeletalMeshComponent* SkeleMesh, FName BoneName);
+	FTransform GetRefPoseBoneRelativeTransform(FName BoneName);
 
 private:
+
+	UPROPERTY()
+	USkeletalMeshComponent* SkeletalHandMesh;
 
 	UPROPERTY()
 	TArray<FWeldedBoneDriverData> BoneDriverMap;

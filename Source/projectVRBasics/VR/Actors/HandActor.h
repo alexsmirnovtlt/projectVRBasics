@@ -18,9 +18,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:	
-	//virtual void Tick(float DeltaTime) override;
-
 public:
 	float GetHandMass() const;
 
@@ -51,6 +48,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Hand Setup")
 	FName NoCollisionPresetName;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	//class UVRHandPhysicalAnimationComponent* HandPhysicalAnimationComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UHandCollisionUpdaterComponent* HandCollisionUpdaterComponent;
 };

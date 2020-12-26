@@ -1,31 +1,37 @@
 // Alex Smirnov 2020-2021
 
 
-#include "VRHandPhysicalAnimationComponent.h"
+#include "HandCollisionUpdaterComponent.h"
 
-UVRHandPhysicalAnimationComponent::UVRHandPhysicalAnimationComponent()
+#include "Components/SkeletalMeshComponent.h"
+
+
+UHandCollisionUpdaterComponent::UHandCollisionUpdaterComponent()
 {
+	PrimaryComponentTick.bCanEverTick = true;
+
 	bAutoSetPhysicsSleepSensitivity = true;
 	SleepThresholdMultiplier = 0.0f;
 }
 
-void UVRHandPhysicalAnimationComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UHandCollisionUpdaterComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UpdateWeldedBoneDriver();
 }
 
-void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver()
+void UHandCollisionUpdaterComponent::SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh)
 {
+	SkeletalHandMesh = SkeletalMesh;
 	SetupWeldedBoneDriver_Implementation(false);
 }
 
-void UVRHandPhysicalAnimationComponent::RefreshWeldedBoneDriver()
+void UHandCollisionUpdaterComponent::RefreshWeldedBoneDriver()
 {
 	SetupWeldedBoneDriver_Implementation(true);
 }
 
-FTransform UVRHandPhysicalAnimationComponent::GetWorldSpaceRefBoneTransform(FReferenceSkeleton& RefSkel, int32 BoneIndex, int32 ParentBoneIndex)
+FTransform UHandCollisionUpdaterComponent::GetWorldSpaceRefBoneTransform(FReferenceSkeleton& RefSkel, int32 BoneIndex, int32 ParentBoneIndex)
 {
 	FTransform BoneTransform;
 
@@ -43,14 +49,14 @@ FTransform UVRHandPhysicalAnimationComponent::GetWorldSpaceRefBoneTransform(FRef
 	return BoneTransform;
 }
 
-FTransform UVRHandPhysicalAnimationComponent::GetRefPoseBoneRelativeTransform(USkeletalMeshComponent* SkeleMesh, FName BoneName)
+FTransform UHandCollisionUpdaterComponent::GetRefPoseBoneRelativeTransform(FName BoneName)
 {
 	FTransform BoneTransform;
 
-	if (SkeleMesh && !BoneName.IsNone())
+	if (SkeletalHandMesh && !BoneName.IsNone())
 	{
 		FReferenceSkeleton RefSkel;
-		RefSkel = SkeleMesh->SkeletalMesh->RefSkeleton;
+		RefSkel = SkeletalHandMesh->SkeletalMesh->RefSkeleton;
 
 		BoneTransform = GetWorldSpaceRefBoneTransform(RefSkel, RefSkel.FindBoneIndex(BoneName), 0);
 	}
@@ -58,7 +64,7 @@ FTransform UVRHandPhysicalAnimationComponent::GetRefPoseBoneRelativeTransform(US
 	return BoneTransform;
 }
 
-void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver_Implementation(bool bReInit)
+void UHandCollisionUpdaterComponent::SetupWeldedBoneDriver_Implementation(bool bReInit)
 {
 	TArray<FWeldedBoneDriverData> OriginalData;
 	if (bReInit)
@@ -68,21 +74,19 @@ void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver_Implementation(boo
 
 	BoneDriverMap.Empty();
 
-	USkeletalMeshComponent* SkeleMesh = GetSkeletalMesh();
-
-	if (!SkeleMesh || !SkeleMesh->Bodies.Num())
+	if (!SkeletalHandMesh || !SkeletalHandMesh->Bodies.Num())
 		return;
 
-	UPhysicsAsset* PhysAsset = SkeleMesh ? SkeleMesh->GetPhysicsAsset() : nullptr;
-	if (!PhysAsset || !SkeleMesh->SkeletalMesh)
+	UPhysicsAsset* PhysAsset = SkeletalHandMesh ? SkeletalHandMesh->GetPhysicsAsset() : nullptr;
+	if (!PhysAsset || !SkeletalHandMesh->SkeletalMesh)
 	{
 		return;
 	}
 
 #if WITH_PHYSX
 
-	FBodyInstance* ParentBody = SkeleMesh->Bodies[0];
-	
+	FBodyInstance* ParentBody = SkeletalHandMesh->Bodies[0];
+
 	// Build map of bodies that we want to control.
 	FPhysicsActorHandle& ActorHandle = ParentBody->WeldParent ? ParentBody->WeldParent->GetPhysicsActorHandle() : ParentBody->GetPhysicsActorHandle();
 
@@ -100,7 +104,7 @@ void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver_Implementation(boo
 				if (ShapeElem)
 				{
 					FName TargetBoneName = ShapeElem->GetName();
-					int32 BoneIdx = SkeleMesh->GetBoneIndex(TargetBoneName);
+					int32 BoneIdx = SkeletalHandMesh->GetBoneIndex(TargetBoneName);
 
 					if (BoneIdx != INDEX_NONE)
 					{
@@ -115,8 +119,8 @@ void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver_Implementation(boo
 						else
 						{
 							FTransform BoneTransform = FTransform::Identity;
-							if (SkeleMesh->GetBoneIndex(TargetBoneName) != INDEX_NONE)
-								BoneTransform = GetRefPoseBoneRelativeTransform(SkeleMesh, TargetBoneName).Inverse();
+							if (SkeletalHandMesh->GetBoneIndex(TargetBoneName) != INDEX_NONE)
+								BoneTransform = GetRefPoseBoneRelativeTransform(TargetBoneName).Inverse();
 
 							DriverData.RelativeTransform = FPhysicsInterface::GetLocalTransform(Shape) * BoneTransform;
 						}
@@ -140,25 +144,23 @@ void UVRHandPhysicalAnimationComponent::SetupWeldedBoneDriver_Implementation(boo
 }
 
 
-void UVRHandPhysicalAnimationComponent::UpdateWeldedBoneDriver()
+void UHandCollisionUpdaterComponent::UpdateWeldedBoneDriver()
 {
 	if (!BoneDriverMap.Num())
 		return;
 
-	USkeletalMeshComponent* SkeleMesh = GetSkeletalMesh();
-
-	if (!SkeleMesh || !SkeleMesh->Bodies.Num())
+	if (!SkeletalHandMesh || !SkeletalHandMesh->Bodies.Num())
 		return;
 
-	UPhysicsAsset* PhysAsset = SkeleMesh ? SkeleMesh->GetPhysicsAsset() : nullptr;
-	if (!PhysAsset || !SkeleMesh->SkeletalMesh)
+	UPhysicsAsset* PhysAsset = SkeletalHandMesh ? SkeletalHandMesh->GetPhysicsAsset() : nullptr;
+	if (!PhysAsset || !SkeletalHandMesh->SkeletalMesh)
 	{
 		return;
 	}
 
 #if WITH_PHYSX
 
-	FBodyInstance* ParentBody = SkeleMesh->Bodies[0];
+	FBodyInstance* ParentBody = SkeletalHandMesh->Bodies[0];
 
 	if (!ParentBody->IsInstanceSimulatingPhysics() && !ParentBody->WeldParent)
 		return;
@@ -182,7 +184,7 @@ void UVRHandPhysicalAnimationComponent::UpdateWeldedBoneDriver()
 				{
 					bModifiedBody = true;
 
-					FTransform Trans = SkeleMesh->GetSocketTransform(WeldedData->BoneName, ERelativeTransformSpace::RTS_World);
+					FTransform Trans = SkeletalHandMesh->GetSocketTransform(WeldedData->BoneName, ERelativeTransformSpace::RTS_World);
 
 					// This fixes a bug with simulating inverse scaled meshes
 					//Trans.SetScale3D(FVector(1.f) * Trans.GetScale3D().GetSignVector());

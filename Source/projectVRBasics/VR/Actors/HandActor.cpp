@@ -5,7 +5,8 @@
 
 #include "Components/SkeletalMeshComponent.h"
 
-//#include "ActorComponents/VRHandPhysicalAnimationComponent.h"
+#include "ActorComponents/HandCollisionUpdaterComponent.h"
+
 
 AHandActor::AHandActor()
 {
@@ -19,7 +20,7 @@ AHandActor::AHandActor()
 	
 	SetTickGroup(ETickingGroup::TG_PrePhysics);
 
-	//HandPhysicalAnimationComponent = CreateDefaultSubobject<UVRHandPhysicalAnimationComponent>(TEXT("HandPhysicalAnimationComponent"));
+	HandCollisionUpdaterComponent = CreateDefaultSubobject<UHandCollisionUpdaterComponent>(TEXT("HandCollisionUpdaterComponent"));
 }
 
 void AHandActor::BeginPlay()
@@ -33,8 +34,7 @@ void AHandActor::BeginPlay()
 	HandMesh->SetSimulatePhysics(false);
 	HandMesh->SetMassOverrideInKg(NAME_None, HandMass);
 
-	//HandPhysicalAnimationComponent->SetSkeletalMeshComponent(HandMesh);
-	//HandPhysicalAnimationComponent->SetupWeldedBoneDriver();
+	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
 }
 
 USkeletalMeshComponent* AHandActor::GetSkeletalHandMeshComponent_Implementation() const
