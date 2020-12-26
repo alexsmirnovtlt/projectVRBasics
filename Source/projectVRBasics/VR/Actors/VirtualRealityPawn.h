@@ -87,8 +87,8 @@ protected:
 
 	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);;
 
-	bool InitHeadset(IXRTrackingSystem& TrackingSystem);
-	void InitMotionControllers(IXRTrackingSystem& TrackingSystem);
+	bool InitHeadset(IXRTrackingSystem* TrackingSystem);
+	void InitMotionControllers(IXRTrackingSystem* TrackingSystem);
 	void CreateMotionController(bool bLeft, UClass* ClassToCreate);
 
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")

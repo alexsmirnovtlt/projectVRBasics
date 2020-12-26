@@ -85,10 +85,10 @@ void AVirtualRealityPawn::OnStartTimerEnd()
 	TeleportToLocation(VRRootComponent->GetComponentLocation(), GetActorRotation()); // so player will be standing at spawn location even if he is not standing at the center of tracked zone irl
 
 	// Check that VR Headset is present and set tracking origin
-	if (!InitHeadset(*TrackingSystem.Get())) return;
+	if (!InitHeadset(TrackingSystem.Get())) return;
 	
 	// Trying to create motion controlles using StartingControllerName if not none, or detecting Headset type using info from TrackingSystem
-	InitMotionControllers(*TrackingSystem.Get());
+	InitMotionControllers(TrackingSystem.Get());
 
 	if (auto PlayerController = Cast<APlayerController>(GetController()))
 	{
@@ -96,9 +96,9 @@ void AVirtualRealityPawn::OnStartTimerEnd()
 	}
 }
 
-bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem& TrackingSystem)
+bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem* TrackingSystem)
 {
-	uint32 HMDCount = TrackingSystem.CountTrackedDevices(EXRTrackedDeviceType::HeadMountedDisplay);
+	uint32 HMDCount = TrackingSystem->CountTrackedDevices(EXRTrackedDeviceType::HeadMountedDisplay);
 
 	if (HMDCount != 1)
 	{
@@ -107,12 +107,12 @@ bool AVirtualRealityPawn::InitHeadset(IXRTrackingSystem& TrackingSystem)
 		return false;
 	}
 	// Setting that our camera will change its local position relative to the real world floor
-	TrackingSystem.SetTrackingOrigin(EHMDTrackingOrigin::Floor); // will work for everything except PS Move, EHMDTrackingOrigin::Eye for that
+	TrackingSystem->SetTrackingOrigin(EHMDTrackingOrigin::Floor); // will work for everything except PS Move, EHMDTrackingOrigin::Eye for that
 
 	return true;
 }
 
-void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem& TrackingSystem)
+void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem* TrackingSystem)
 {
 	// Either creating hands that defined in StartingControllerName or getting headset info and creating controllers using that info
 	bool bSuccessControllersCreation = false;
@@ -121,7 +121,7 @@ void AVirtualRealityPawn::InitMotionControllers(IXRTrackingSystem& TrackingSyste
 	
 	if(!bSuccessControllersCreation)
 	{
-		FString HeadsetInfo = TrackingSystem.GetVersionString();
+		FString HeadsetInfo = TrackingSystem->GetVersionString();
 		for (auto& HeadsetType : ControllerTypes)
 		{
 			if (HeadsetInfo.Contains(HeadsetType.HeadsetName.ToString()))

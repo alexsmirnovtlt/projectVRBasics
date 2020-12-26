@@ -8,6 +8,7 @@
 #include "VRMotionControllerHand.generated.h"
 
 class AHandActor;
+class AHandPhysConstraint;
 class USkeletalMeshComponent;
 
 /**
@@ -37,6 +38,8 @@ public:
 	void BreakCurrentHandConstraint();
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	void EnableHandCollision(bool bEnable);
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
+	class AHandPhysConstraint* GetPhysConstraint();
 	//UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	//void ChangeHandAnimationEnum(int32 index);
 
@@ -44,15 +47,13 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	USkeletalMeshComponent* GetPhantomHandSkeletalMesh() const;
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	UPhysicsConstraintComponent* GetPhysicsConstraint() const;
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	UStaticMeshComponent* GetFirstPhysicsConstraintComponent() const;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hand Motion Controller")
 	float MotionControllerCheckInterval;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hand Motion Controller")
 	TSubclassOf<AHandActor> PhysicalHandClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hand Motion Controller")
+	TSubclassOf<AHandPhysConstraint> PhysicalHandConstraintClass;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Hand Motion Controller Events")
 	void OnPhysicalHandAppearedEvent();
@@ -62,19 +63,23 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	AHandActor* HandActor;
 
+	UPROPERTY(BlueprintReadOnly)
+	AHandPhysConstraint* PhysConstraint;
+
 	bool bHandFollowsController;
 
 private:
 
 	FTimerHandle TimerHandle_BeginPlayWait;
 	FTimerHandle TimerHandle_TeleportPhysicsResetWait;
+
 	UFUNCTION()
 	void OnBeginPlayWaitEnd();
+	UFUNCTION()
 	void OnTeleportWaitForPhysicsResetEnd();
 
-	void CreatePhysicalHand();
+	void AttachPhysConstraintToMovementController();
 
 	float TeleportWaitTimeForPhysicsReset = 0.1f;
-	float MinSquaredDistanceToSpawnPhysicalHand = 400.f;
 	bool bHaveActivePhysConstraint = false;
 };

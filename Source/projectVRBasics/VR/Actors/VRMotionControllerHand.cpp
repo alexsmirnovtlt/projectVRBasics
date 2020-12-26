@@ -10,6 +10,7 @@
 
 #include "HandActor.h"
 #include "VirtualRealityPawn.h"
+#include "HandPhysConstraint.h"
 
 
 AVRMotionControllerHand::AVRMotionControllerHand()
@@ -24,10 +25,9 @@ void AVRMotionControllerHand::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!PhysicalHandClass || !GetPhysicsConstraint() || !GetFirstPhysicsConstraintComponent()) return;
+	if (!PhysicalHandClass || !PhysicalHandConstraintClass || !GetPhantomHandSkeletalMesh()) return;
 
-	// Making physical hand appear only when motion controller tracks its location in real world. This usually happend only after player put on his VR headset
-	// That prevents hands form spawning at FVector::ZeroVector on BeginPlay() under the floor
+	// Waiting to give headset some time to update motion controller location so it wont move to local FVector::ZeroVector on spawn 
 	GetWorld()->GetTimerManager().SetTimer(
 		TimerHandle_BeginPlayWait,
 		this,
@@ -51,32 +51,32 @@ void AVRMotionControllerHand::Destroyed()
 
 void AVRMotionControllerHand::OnBeginPlayWaitEnd()
 {
-	if (!MotionController->IsTracked() || MotionController->CurrentTrackingStatus != ETrackingStatus::Tracked) return;
-	
-	FVector MotionControllerRelativeLocation = MotionController->GetRelativeLocation();
-	//UE_LOG(LogTemp, Warning, TEXT("CHECK"));
-	if (MotionControllerRelativeLocation.SizeSquared() > MinSquaredDistanceToSpawnPhysicalHand)
+	if (!MotionController->IsTracked() || MotionController->CurrentTrackingStatus != ETrackingStatus::Tracked)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
-
-		// Creating actor for physical hand
-		FTransform PhantomHandTransform = GetPhantomHandSkeletalMesh()->GetComponentTransform();
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		HandActor = GetWorld()->SpawnActor<AHandActor>(PhysicalHandClass, PhantomHandTransform, SpawnParams);
-		HandActor->SetActorScale3D(PhantomHandTransform.GetScale3D()); // SpawnActor() ignores that apparently
-		HandActor->SetOwner(this);
-		HandActor->SetInstigator(OwningVRPawn);
-
-		HandActor->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-
-		MakeHandFollowMovementController(true);
-
-		OnPhysicalHandAppearedEvent();
+		// Timer will loop for now
+		UE_LOG(LogTemp, Error, TEXT("AVRMotionControllerHand Init was skipped for now. Will retry")); // TODO Check if that is actually may happen
+		return;
 	}
 
-	// Otherwise timer will loop until relative location of motion controller more than MinSquaredDistanceToSpawnPhysicalHand or until this gets destroyed
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
+
+	// Creating actor for physical hand
+	FTransform PhantomHandTransform = GetPhantomHandSkeletalMesh()->GetComponentTransform();
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	HandActor = GetWorld()->SpawnActor<AHandActor>(PhysicalHandClass, PhantomHandTransform, SpawnParams);
+	HandActor->SetActorScale3D(PhantomHandTransform.GetScale3D()); // SpawnActor() ignores scale apparently
+	HandActor->SetOwner(this);
+	HandActor->SetInstigator(OwningVRPawn);
+	HandActor->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	//
+
+	AttachPhysConstraintToMovementController(); // Creating Physical constraint that we can manage from this class and other actors
+
+	MakeHandFollowMovementController(true); // Attaching hand to phys constraint so it will follow
+
+	OnPhysicalHandAppearedEvent(); // Hand is placed in the world. BP may add some logic here
 }
 
 void AVRMotionControllerHand::TeleportHandToMotionControllerLocation(bool bSweepFromCamera, bool SweepToTarget)
@@ -102,7 +102,6 @@ void AVRMotionControllerHand::TeleportHandToLocation(FVector WorldLocation, FRot
 void AVRMotionControllerHand::MakeHandFollowMovementController(bool TeleportHandToPhantomToSetupConstraint)
 {
 	if (!HandActor) return;
-	if (bHaveActivePhysConstraint) GetPhysicsConstraint()->BreakConstraint();
 
 	FTransform HandCurrentTransform;
 
@@ -112,14 +111,8 @@ void AVRMotionControllerHand::MakeHandFollowMovementController(bool TeleportHand
 		TeleportHandToMotionControllerLocation(false, false);
 	}
 
-	// Creating physical constraint attachment
 	HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(true);
-	GetPhysicsConstraint()->SetConstrainedComponents(
-		GetFirstPhysicsConstraintComponent(),
-		NAME_None,
-		HandActor->GetSkeletalHandMeshComponent(),
-		HandActor->GetRootBoneName()
-	);
+	PhysConstraint->CreateConstraint(HandActor->GetSkeletalHandMeshComponent(), HandActor->GetRootBoneName());
 
 	bHaveActivePhysConstraint = true;
 
@@ -164,9 +157,22 @@ void AVRMotionControllerHand::BreakCurrentHandConstraint()
 {
 	if (bHaveActivePhysConstraint)
 	{
-		GetPhysicsConstraint()->BreakConstraint();
+		PhysConstraint->BreakConstraint();
 		bHaveActivePhysConstraint = false;
 	}
+}
+
+void AVRMotionControllerHand::AttachPhysConstraintToMovementController()
+{
+	if (!PhysConstraint)
+	{
+		// Other actors may have destroyed it or it is not exists yet
+		PhysConstraint = GetWorld()->SpawnActor<AHandPhysConstraint>(PhysicalHandConstraintClass);
+		PhysConstraint->SetOwner(this);
+		PhysConstraint->SetInstigator(OwningVRPawn);
+	}
+
+	PhysConstraint->AttachToComponent(MotionController, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 void AVRMotionControllerHand::EnableHandCollision(bool bEnable)
@@ -193,14 +199,7 @@ USkeletalMeshComponent* AVRMotionControllerHand::GetPhantomHandSkeletalMesh_Impl
 	return nullptr;
 }
 
-UPhysicsConstraintComponent* AVRMotionControllerHand::GetPhysicsConstraint_Implementation() const
+AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 {
-	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetPhysicsConstraint()"), *this->GetClass()->GetFName().ToString());
-	return nullptr;
-}
-
-UStaticMeshComponent* AVRMotionControllerHand::GetFirstPhysicsConstraintComponent_Implementation() const
-{
-	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetFirstPhysicsConstraintComponent()"), *this->GetClass()->GetFName().ToString());
-	return nullptr;
+	return PhysConstraint;
 }
