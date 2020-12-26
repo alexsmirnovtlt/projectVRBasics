@@ -86,8 +86,6 @@ void AVRMotionControllerHand::SweepHandToMotionControllerLocation(bool bSweepFro
 	}
 
 	HandActor->SetActorTransform(GetPhantomHandSkeletalMesh()->GetComponentTransform(), true, nullptr, ETeleportType::TeleportPhysics);
-
-	//HandActor->RefreshWeldedBoneDriver();
 }
 
 void AVRMotionControllerHand::TeleportHandToLocation(FVector WorldLocation, FRotator WorldRotation)
@@ -143,7 +141,12 @@ void AVRMotionControllerHand::StopFollowingPhysConstraint()
 
 void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly)
 {
-	if (!bStarted) SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
+	if (!bStarted)
+	{
+		// TODO Attach constraint back and follow it if not already
+		//StartFollowingPhantomHand(true);
+		SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
+	}
 	Super::OnPawnTeleport(bStarted, bCameraViewOnly);
 }
 

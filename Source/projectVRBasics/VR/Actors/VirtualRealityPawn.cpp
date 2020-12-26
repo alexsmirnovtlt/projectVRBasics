@@ -255,8 +255,8 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 	FVector RootMoveDirection = MainCameraLocationProjected - GetActorLocation();
 	FVector RotatedRootMoveDirection = FRotator(0.f, YawToAdd, 0.f).RotateVector(RootMoveDirection);
 
-	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection, false, nullptr, ETeleportType::ResetPhysics);
-	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f), ETeleportType::ResetPhysics);
+	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection, false, nullptr, ETeleportType::TeleportPhysics);
+	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f), ETeleportType::TeleportPhysics);
 
 	if (LeftHand) LeftHand->OnPawnTeleport(false, true);
 	if (RightHand) RightHand->OnPawnTeleport(false, true);
