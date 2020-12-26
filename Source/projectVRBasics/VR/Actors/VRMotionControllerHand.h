@@ -29,15 +29,17 @@ protected:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void TeleportHandToMotionControllerLocation(bool bSweepFromCamera, bool SweepToTarget = true);
+	void AttachPhysConstraintToPhantomHand();
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
+	void SweepHandToMotionControllerLocation(bool bSweepFromCamera);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	void TeleportHandToLocation(FVector WorldLocation, FRotator WorldRotation);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void MakeHandFollowMovementController(bool TeleportHandToPhantomToSetupConstraint);
+	void StartFollowingPhantomHand(bool bReturnHandBackAfterSetup);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void BreakCurrentHandConstraint();
+	void StartFollowingPhysConstraint(bool TeleportHandToPhantomToSetupConstraint);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void EnableHandCollision(bool bEnable);
+	void StopFollowingPhysConstraint();
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	class AHandPhysConstraint* GetPhysConstraint();
 	//UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
@@ -78,8 +80,6 @@ private:
 	UFUNCTION()
 	void OnTeleportWaitForPhysicsResetEnd();
 
-	void AttachPhysConstraintToMovementController();
-
 	float TeleportWaitTimeForPhysicsReset = 0.1f;
-	bool bHaveActivePhysConstraint = false;
+	bool bPhysConstraintAttachedToPhantomHand = false;
 };

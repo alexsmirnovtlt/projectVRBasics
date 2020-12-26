@@ -255,8 +255,8 @@ void AVirtualRealityPawn::AddCameraYawRotation(float YawToAdd)
 	FVector RootMoveDirection = MainCameraLocationProjected - GetActorLocation();
 	FVector RotatedRootMoveDirection = FRotator(0.f, YawToAdd, 0.f).RotateVector(RootMoveDirection);
 
-	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection);
-	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f));
+	SetActorLocation(MainCameraLocationProjected - RotatedRootMoveDirection, false, nullptr, ETeleportType::ResetPhysics);
+	SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + YawToAdd, 0.f), ETeleportType::ResetPhysics);
 
 	if (LeftHand) LeftHand->OnPawnTeleport(false, true);
 	if (RightHand) RightHand->OnPawnTeleport(false, true);
@@ -272,8 +272,8 @@ void AVirtualRealityPawn::TeleportToLocation(FVector NewLocation, FRotator NewRo
 	FVector LocalRootMoveDirection = MainCamera->GetRelativeLocation() * FVector(1.f, 1.f, 0.f);
 	FVector RotatedDirection = NewRotation.RotateVector(LocalRootMoveDirection);
 
-	SetActorLocation(NewLocation - RotatedDirection + FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()));
-	SetActorRotation(NewRotation);
+	SetActorLocation(NewLocation - RotatedDirection + FVector(0.f, 0.f, PawnRootComponent->GetScaledCapsuleHalfHeight()),false, nullptr, ETeleportType::ResetPhysics);
+	SetActorRotation(NewRotation, ETeleportType::ResetPhysics);
 
 	if (LeftHand) LeftHand->OnPawnTeleport(false, false);
 	if (RightHand) RightHand->OnPawnTeleport(false, false);
@@ -284,17 +284,12 @@ FName AVirtualRealityPawn::GetCurrentControllersTypeName() const
 	return CurrentControllersTypeName;
 }
 
-FVector AVirtualRealityPawn::GetCameraRelativeLocation() const
+FTransform AVirtualRealityPawn::GetCameraRelativeTransform() const
 {
-	return MainCamera->GetRelativeLocation();
+	return MainCamera->GetRelativeTransform();
 }
 
-FVector AVirtualRealityPawn::GetCameraWorldLocation() const
+FTransform AVirtualRealityPawn::GetCameraWorldTransform() const
 {
-	return MainCamera->GetComponentLocation();
-}
-
-FRotator AVirtualRealityPawn::GetCameraRelativeRotation() const
-{
-	return MainCamera->GetRelativeRotation();
+	return MainCamera->GetComponentTransform();
 }

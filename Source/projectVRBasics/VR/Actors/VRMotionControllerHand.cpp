@@ -42,6 +42,7 @@ void AVRMotionControllerHand::Destroyed()
 	Super::Destroyed();
 
 	if (HandActor) HandActor->Destroy();
+	if (PhysConstraint) PhysConstraint->Destroy();
 
 	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_BeginPlayWait))
 	{
@@ -60,109 +61,99 @@ void AVRMotionControllerHand::OnBeginPlayWaitEnd()
 
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
 
-	// Creating actor for physical hand
-	FTransform PhantomHandTransform = GetPhantomHandSkeletalMesh()->GetComponentTransform();
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	HandActor = GetWorld()->SpawnActor<AHandActor>(PhysicalHandClass, PhantomHandTransform, SpawnParams);
-	HandActor->SetActorScale3D(PhantomHandTransform.GetScale3D()); // SpawnActor() ignores scale apparently
+	HandActor = GetWorld()->SpawnActor<AHandActor>(PhysicalHandClass);
 	HandActor->SetOwner(this);
 	HandActor->SetInstigator(OwningVRPawn);
-	HandActor->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-	//
 
-	AttachPhysConstraintToMovementController(); // Creating Physical constraint that we can manage from this class and other actors
+	HandActor->ChangeHandPhysProperties(false, true);
+	StartFollowingPhantomHand(false);
 
-	MakeHandFollowMovementController(true); // Attaching hand to phys constraint so it will follow
+	HandActor->ChangeHandPhysProperties(true, true); // Enabling physics and collision and sweeping from camera to Motion Controller location
+	SweepHandToMotionControllerLocation(true);
+
+	HandActor->RefreshWeldedBoneDriver(); // TODO Setup was already done in BeginPlay() of HandActor and now we must reinit or it wont update properly for some reason 
 
 	OnPhysicalHandAppearedEvent(); // Hand is placed in the world. BP may add some logic here
 }
 
-void AVRMotionControllerHand::TeleportHandToMotionControllerLocation(bool bSweepFromCamera, bool SweepToTarget)
+void AVRMotionControllerHand::SweepHandToMotionControllerLocation(bool bSweepFromCamera)
 {
 	if (!HandActor) return;
 
 	if (bSweepFromCamera)
 	{
-		FVector CameraWorldLocation = OwningVRPawn->GetCameraWorldLocation();
-		HandActor->GetSkeletalHandMeshComponent()->SetWorldLocation(CameraWorldLocation, true, nullptr, ETeleportType::ResetPhysics);
+		TeleportHandToLocation(OwningVRPawn->GetCameraWorldTransform().GetLocation(), GetPhantomHandSkeletalMesh()->GetComponentRotation());
 	}
 
-	FTransform PhantomHandTransform = GetPhantomHandSkeletalMesh()->GetComponentTransform();
-	HandActor->GetSkeletalHandMeshComponent()->SetWorldTransform(PhantomHandTransform, SweepToTarget, nullptr, ETeleportType::ResetPhysics);
+	HandActor->SetActorTransform(GetPhantomHandSkeletalMesh()->GetComponentTransform(), true, nullptr, ETeleportType::TeleportPhysics);
+
+	//HandActor->RefreshWeldedBoneDriver();
 }
 
 void AVRMotionControllerHand::TeleportHandToLocation(FVector WorldLocation, FRotator WorldRotation)
 {
-	HandActor->GetSkeletalHandMeshComponent()->SetWorldLocation(WorldLocation, false, nullptr, ETeleportType::ResetPhysics);
-	HandActor->GetSkeletalHandMeshComponent()->SetWorldRotation(WorldRotation, false, nullptr, ETeleportType::ResetPhysics);
+	HandActor->SetActorLocation(WorldLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	HandActor->SetActorRotation(WorldRotation, ETeleportType::TeleportPhysics);
 }
 
-void AVRMotionControllerHand::MakeHandFollowMovementController(bool TeleportHandToPhantomToSetupConstraint)
+void AVRMotionControllerHand::StartFollowingPhantomHand(bool bReturnHandBackAfterSetup)
+{
+	if (!bPhysConstraintAttachedToPhantomHand) AttachPhysConstraintToPhantomHand();
+
+	FTransform CurrentHandTransform = HandActor->GetTransform();
+
+	HandActor->SetActorTransform(GetPhantomHandSkeletalMesh()->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
+	PhysConstraint->CreateConstraint(HandActor->GetSkeletalHandMeshComponent(), HandActor->GetRootBoneName());
+
+	if (bReturnHandBackAfterSetup) HandActor->SetActorTransform(CurrentHandTransform, false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void AVRMotionControllerHand::StartFollowingPhysConstraint(bool TeleportHandToPhantomToSetupConstraint)
 {
 	if (!HandActor) return;
+
+	// TODO not used yet
 
 	FTransform HandCurrentTransform;
 
 	if (TeleportHandToPhantomToSetupConstraint)
 	{
-		HandCurrentTransform = HandActor->GetSkeletalHandMeshComponent()->GetComponentTransform();
-		TeleportHandToMotionControllerLocation(false, false);
+		//HandCurrentTransform = HandActor->GetSkeletalHandMeshComponent()->GetComponentTransform();
+		//TeleportHandToMotionControllerLocation(false, false);
 	}
 
-	HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(true);
 	PhysConstraint->CreateConstraint(HandActor->GetSkeletalHandMeshComponent(), HandActor->GetRootBoneName());
 
-	bHaveActivePhysConstraint = true;
+	bPhysConstraintAttachedToPhantomHand = true;
 
 	if (TeleportHandToPhantomToSetupConstraint)
 	{
 		// Returning hand back if needed
-		HandActor->GetSkeletalHandMeshComponent()->SetWorldTransform(HandCurrentTransform, false, nullptr, ETeleportType::ResetPhysics);
+		HandActor->GetSkeletalHandMeshComponent()->SetWorldTransform(HandCurrentTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	}
+}
+
+void AVRMotionControllerHand::StopFollowingPhysConstraint()
+{
+	if (!bPhysConstraintAttachedToPhantomHand) return;
+	
+	PhysConstraint->BreakConstraint();
+	bPhysConstraintAttachedToPhantomHand = false;
 }
 
 void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly)
 {
-	if (bStarted)
-	{
-		//BreakCurrentHandConstraint();
-		HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(false);
-	}
-	else
-	{
-		TeleportHandToMotionControllerLocation(true, true);
-		
-		// The easiest way to teleport hands so they dont sway after that is disable physics for some time (player`s camera is faded to black at this moment) and SetSimulatePhysics(true) again
-		GetWorld()->GetTimerManager().SetTimer(
-			TimerHandle_TeleportPhysicsResetWait,
-			this,
-			&AVRMotionControllerHand::OnTeleportWaitForPhysicsResetEnd,
-			TeleportWaitTimeForPhysicsReset,
-			true
-		);
-	}
-
+	if (!bStarted) SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
 	Super::OnPawnTeleport(bStarted, bCameraViewOnly);
 }
 
 void AVRMotionControllerHand::OnTeleportWaitForPhysicsResetEnd()
 {
-	HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(true);
+	//HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(true);
 	//MakeHandFollowMovementController(true);
 }
 
-void AVRMotionControllerHand::BreakCurrentHandConstraint()
-{
-	if (bHaveActivePhysConstraint)
-	{
-		PhysConstraint->BreakConstraint();
-		bHaveActivePhysConstraint = false;
-	}
-}
-
-void AVRMotionControllerHand::AttachPhysConstraintToMovementController()
+void AVRMotionControllerHand::AttachPhysConstraintToPhantomHand()
 {
 	if (!PhysConstraint)
 	{
@@ -172,21 +163,10 @@ void AVRMotionControllerHand::AttachPhysConstraintToMovementController()
 		PhysConstraint->SetInstigator(OwningVRPawn);
 	}
 
+	bPhysConstraintAttachedToPhantomHand = true;
 	PhysConstraint->AttachToComponent(MotionController, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
-void AVRMotionControllerHand::EnableHandCollision(bool bEnable)
-{
-	FName NewCollisionProfileName = bEnable ? HandActor->GetActiveCollisionPresetName() : HandActor->GeNoCollisionPresetName();
-	HandActor->GetSkeletalHandMeshComponent()->SetCollisionProfileName(NewCollisionProfileName);
-
-	if (!bEnable)
-	{
-		// Returning Physics Collision even if we are disabling it
-		HandActor->GetSkeletalHandMeshComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
-	//if(bEnable) HandActor->GetSkeletalHandMeshComponent()->SetMassOverrideInKg() BONE MASS CHANGE
-}
 /*
 void AVRMotionControllerHand::ChangeHandAnimationEnum_Implementation(int32 index)
 {

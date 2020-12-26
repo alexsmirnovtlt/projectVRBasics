@@ -7,6 +7,10 @@
 
 #include "HandActor.generated.h"
 
+class UHandCollisionUpdaterComponent;
+class USkeletalMeshComponent;
+class USceneComponent;
+
 UCLASS(Blueprintable, abstract)
 class PROJECTVRBASICS_API AHandActor : public AActor
 {
@@ -21,10 +25,15 @@ protected:
 public:
 	float GetHandMass() const;
 
+	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	void ChangeHandPhysProperties(bool bEnableCollision, bool bSimulatePhysics);
+	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	void RefreshWeldedBoneDriver();
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	class USkeletalMeshComponent* GetSkeletalHandMeshComponent() const;
+	USkeletalMeshComponent* GetSkeletalHandMeshComponent() const;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	class USceneComponent* GetArrowComponent() const;
+	USceneComponent* GetArrowComponent() const;
 
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	FName& GetRootBoneName();
@@ -49,5 +58,5 @@ protected:
 	FName NoCollisionPresetName;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UHandCollisionUpdaterComponent* HandCollisionUpdaterComponent;
+	UHandCollisionUpdaterComponent* HandCollisionUpdaterComponent;
 };

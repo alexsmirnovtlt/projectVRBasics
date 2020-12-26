@@ -31,10 +31,30 @@ void AHandActor::BeginPlay()
 	if (!HandMesh) return;
 
 	HandMesh->SetUseCCD(true);
-	HandMesh->SetSimulatePhysics(false);
 	HandMesh->SetMassOverrideInKg(NAME_None, HandMass);
 
+	ChangeHandPhysProperties(false, false);
+	
 	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
+}
+
+void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulatePhysics)
+{
+	auto HandMesh = GetSkeletalHandMeshComponent();
+	if (!HandMesh) return;
+
+	HandMesh->SetSimulatePhysics(bSimulatePhysics);
+
+	FName& NewCollisionProfileName = bEnableCollision ? ActiveCollisionPresetName : NoCollisionPresetName;
+	HandMesh->SetCollisionProfileName(NewCollisionProfileName);
+
+	// Returning Physics Collision even if we are disabling it
+	if (!bEnableCollision && bSimulatePhysics) HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
+void AHandActor::RefreshWeldedBoneDriver()
+{
+	HandCollisionUpdaterComponent->RefreshWeldedBoneDriver();
 }
 
 USkeletalMeshComponent* AHandActor::GetSkeletalHandMeshComponent_Implementation() const

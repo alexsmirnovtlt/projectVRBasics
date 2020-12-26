@@ -51,11 +51,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	void TeleportToLocation(FVector NewLocation, FRotator NewRotation); //  used in teleport state when player teleports
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FVector GetCameraRelativeLocation() const;
+	FTransform GetCameraRelativeTransform() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FRotator GetCameraRelativeRotation() const;
-	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FVector GetCameraWorldLocation() const;
+	FTransform GetCameraWorldTransform() const;
 
 	// bool that can be accessible in Motion Controller BPs
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VR Setup")
