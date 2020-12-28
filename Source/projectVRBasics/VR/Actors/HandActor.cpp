@@ -15,7 +15,7 @@ AHandActor::AHandActor()
 	HandMass = 10.f;
 	RootBoneName = TEXT("hand_r");
 	PalmSocketName = TEXT("palm_socket");
-	NoCollisionPresetName = TEXT("NoCollision");
+	NoCollisionPresetName = TEXT("None");
 	ActiveCollisionPresetName = TEXT("PhysicsActor");
 	
 	SetTickGroup(ETickingGroup::TG_PrePhysics);
@@ -31,9 +31,8 @@ void AHandActor::BeginPlay()
 	if (!HandMesh) return;
 
 	HandMesh->SetUseCCD(true);
-	HandMesh->SetMassOverrideInKg(NAME_None, HandMass);
 
-	ChangeHandPhysProperties(false, false);
+	ChangeHandPhysProperties(false, false); // Before we setup our phys costraint hand should not collide with anything
 	
 	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
 }
@@ -45,11 +44,16 @@ void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulateP
 
 	HandMesh->SetSimulatePhysics(bSimulatePhysics);
 
-	FName& NewCollisionProfileName = bEnableCollision ? ActiveCollisionPresetName : NoCollisionPresetName;
-	HandMesh->SetCollisionProfileName(NewCollisionProfileName);
-
-	// Returning Physics Collision even if we are disabling it
-	if (!bEnableCollision && bSimulatePhysics) HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	if(bEnableCollision) HandMesh->SetCollisionProfileName(ActiveCollisionPresetName);
+	else
+	{
+		if (NoCollisionPresetName.IsNone())
+		{
+			HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); // No Collision Profile was specified, ignoring all channels but enabling query and phys collisions for physical constraint
+			HandMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		}
+		else HandMesh->SetCollisionProfileName(NoCollisionPresetName);
+	}
 }
 
 void AHandActor::RefreshWeldedBoneDriver()

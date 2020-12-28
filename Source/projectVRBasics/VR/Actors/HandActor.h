@@ -54,9 +54,10 @@ protected:
 	FName PalmSocketName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Hand Setup")
 	FName ActiveCollisionPresetName;
+	// Optional. If not None it should be custom collision channel (Project Settings -> Collision -> Preset -> New) that have at least Collision Enabled: Query and Physics that ignores all channels
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Hand Setup")
 	FName NoCollisionPresetName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY()
 	UHandCollisionUpdaterComponent* HandCollisionUpdaterComponent;
 };
