@@ -5,16 +5,9 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 
+#include "../Actors/Interfaces/VRPlayerInput.h"
+
 #include "ControllerState.generated.h"
-
-
-UENUM(BlueprintType)
-enum class EButtonActionType : uint8 {
-	Touched = 0 UMETA(DisplayName = "Touched"),
-	Pressed = 1 UMETA(DisplayName = "Pressed"),
-	ReleasedPress = 2 UMETA(DisplayName = "Released Press"),
-	ReleasedTouch = 3 UMETA(DisplayName = "Released Touch")
-};
 
 class AVirtualRealityMotionController;
 
@@ -22,7 +15,7 @@ class AVirtualRealityMotionController;
  * 
  */
 UCLASS(Blueprintable)
-class PROJECTVRBASICS_API UControllerState : public UObject
+class PROJECTVRBASICS_API UControllerState : public UObject, public IVRPlayerInput
 {
 	GENERATED_BODY()
 
@@ -43,27 +36,6 @@ public:
 	void OnStateEnter();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
 	void OnStateExit();
-
-	// Exposing input to BP as events
-
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Axis_Thumbstick(float Horizontal, float Vertical);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Axis_Trigger(float Value);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Axis_Grip(float Value);
-
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Button_Thumbstick(EButtonActionType ActionType);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Button_Primary(EButtonActionType ActionType);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Button_Secondary(EButtonActionType ActionType);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Button_Trigger(EButtonActionType ActionType);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Input")
-	void Input_Button_Grip(EButtonActionType ActionType);
-	//
 
 protected:
 

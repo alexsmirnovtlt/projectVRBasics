@@ -3,10 +3,12 @@
 
 #include "VirtualRealityMotionController.h"
 
+
 #include "MotionControllerComponent.h"
-#include "VirtualRealityPawn.h"
+#include "UObject/ScriptInterface.h"
 
 #include "../States/ControllerState.h"
+#include "VirtualRealityPawn.h"
 
 
 AVirtualRealityMotionController::AVirtualRealityMotionController()
@@ -20,9 +22,6 @@ AVirtualRealityMotionController::AVirtualRealityMotionController()
 	MotionController->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	MotionController->SetGenerateOverlapEvents(false);
 	MotionController->SetCollisionProfileName("NoCollision");
-
-	// TODO Check if it may lead to potential problems (multiplayer?)
-	AutoReceiveInput = EAutoReceiveInput::Player0; // Input is defined in BP child classes, so every controller can define custom visual and logic behaviour (thumbstick rotation, button presses etc)
 }
 
 void AVirtualRealityMotionController::BeginPlay()
@@ -140,4 +139,86 @@ AVirtualRealityPawn* AVirtualRealityMotionController::GetVRPawn() const
 bool AVirtualRealityMotionController::IsRightHandController()
 {
 	return IsRightController;
+}
+
+// Input from Pawn. See VirtualRealityPawn.h for more details
+
+void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_X(float Value)
+{
+	Axis_Thumbstick_X = Value; // storing value for use in BP
+	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X, Axis_Thumbstick_Y); // Forwarding input to controller state if able
+	 // TODO MUST CHECK BELOW
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X, Axis_Thumbstick_Y); // Forwarding to grabbed object or UI currently in use
+	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X, Axis_Thumbstick_Y); // call to BP event
+}
+
+void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
+{
+	Axis_Thumbstick_Y = Value;
+	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X, Axis_Thumbstick_Y);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X, Axis_Thumbstick_Y);
+	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X, Axis_Thumbstick_Y);
+}
+
+void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
+{
+	if (ControllerState) ControllerState->Execute_Input_Axis_Trigger(ControllerState, Value);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Trigger(ConnectedActorWithInputInterface.GetObject(), Value);
+	Execute_Input_Axis_Trigger(this, Value);
+}
+
+void AVirtualRealityMotionController::PawnInput_Axis_Grip(float Value)
+{
+	if (ControllerState) ControllerState->Execute_Input_Axis_Grip(ControllerState, Value);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Grip(ConnectedActorWithInputInterface.GetObject(), Value);
+	Execute_Input_Axis_Grip(this, Value);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Primary(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Primary(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Primary(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Primary(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Secondary(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Secondary(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Secondary(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Secondary(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Thumbstick(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Thumbstick(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Thumbstick(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Thumbstick(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Trigger(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Trigger(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Trigger(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Trigger(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Grip(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Grip(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Grip(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Grip(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_Menu(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_Menu(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Menu(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_Menu(this, ActionType);
+}
+
+void AVirtualRealityMotionController::PawnInput_Button_System(EButtonActionType ActionType)
+{
+	if (ControllerState) ControllerState->Execute_Input_Button_System(ControllerState, ActionType);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_System(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	Execute_Input_Button_System(this, ActionType);
 }

@@ -293,3 +293,137 @@ FTransform AVirtualRealityPawn::GetCameraWorldTransform() const
 {
 	return MainCamera->GetComponentTransform();
 }
+
+
+// BEGIN INPUT
+
+void AVirtualRealityPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Right_Thumbstick_X, this, &AVirtualRealityPawn::Input_Axis_Right_Thumbstick_X);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Right_Thumbstick_Y, this, &AVirtualRealityPawn::Input_Axis_Right_Thumbstick_Y);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Left_Thumbstick_X, this, &AVirtualRealityPawn::Input_Axis_Left_Thumbstick_X);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Left_Thumbstick_Y, this, &AVirtualRealityPawn::Input_Axis_Left_Thumbstick_Y);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Right_Trigger, this, &AVirtualRealityPawn::Input_Axis_Right_Trigger);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Left_Trigger, this, &AVirtualRealityPawn::Input_Axis_Left_Trigger);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Right_Grip, this, &AVirtualRealityPawn::Input_Axis_Right_Grip);
+	PlayerInputComponent->BindAxis(InputBindingName_Axis_Left_Grip, this, &AVirtualRealityPawn::Input_Axis_Left_Grip);
+
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Primary_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Primary_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Primary_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Primary_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Secondary_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Secondary_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Secondary_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Secondary_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Primary_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Primary_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Primary_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Primary_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Secondary_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Secondary_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Secondary_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Secondary_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Primary_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Primary_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Primary_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Primary_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Secondary_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Secondary_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Secondary_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Secondary_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Primary_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Primary_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Primary_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Primary_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Secondary_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Secondary_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Secondary_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Secondary_Touch, EButtonActionType::ReleasedTouch);
+
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Trigger_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Trigger_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Trigger_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Trigger_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Trigger_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Trigger_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Trigger_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Trigger_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Trigger_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Trigger_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Trigger_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Trigger_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Trigger_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Trigger_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Trigger_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Trigger_Touch, EButtonActionType::ReleasedTouch);
+
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Grip_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Grip_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Grip_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Grip_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Grip_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Grip_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Grip_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Grip_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Grip_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Grip_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Grip_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Grip_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Grip_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Grip_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Grip_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Grip_Touch, EButtonActionType::ReleasedTouch);
+
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Thumbstick_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Thumbstick_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Thumbstick_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Thumbstick_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Thumbstick_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Right_Thumbstick_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Right_Thumbstick_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Right_Thumbstick_Touch, EButtonActionType::ReleasedTouch);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Thumbstick_Press, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Thumbstick_Press, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Thumbstick_Press, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Thumbstick_Press, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Thumbstick_Touch, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Left_Thumbstick_Touch, EButtonActionType::Touched);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Left_Thumbstick_Touch, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Left_Thumbstick_Touch, EButtonActionType::ReleasedTouch);
+
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Menu, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_Menu, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_Menu, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_Menu, EButtonActionType::ReleasedPress);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_System, EInputEvent::IE_Pressed, this, &AVirtualRealityPawn::Input_Button_System, EButtonActionType::Pressed);
+	PlayerInputComponent->BindAction<InputActionType>(InputBindingName_Button_Action_Button_System, EInputEvent::IE_Released, this, &AVirtualRealityPawn::Input_Button_System, EButtonActionType::ReleasedPress);
+}
+
+const FName AVirtualRealityPawn::InputBindingName_Axis_Right_Thumbstick_X("Axis_Right_Thumbstick_X");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Right_Thumbstick_Y("Axis_Right_Thumbstick_Y");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Left_Thumbstick_X("Axis_Left_Thumbstick_X");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Left_Thumbstick_Y("Axis_Left_Thumbstick_Y");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Right_Trigger("Axis_Right_Trigger");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Left_Trigger("Axis_Left_Trigger");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Right_Grip("Axis_Right_Grip");
+const FName AVirtualRealityPawn::InputBindingName_Axis_Left_Grip("Axis_Left_Grip");
+
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Primary_Press("Button_Left_Primary_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Secondary_Press("Button_Left_Secondary_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Primary_Press("Button_Right_Primary_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Secondary_Press("Button_Right_Secondary_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Primary_Touch("Button_Left_Primary_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Secondary_Touch("Button_Left_Secondary_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Primary_Touch("Button_Right_Primary_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Secondary_Touch("Button_Right_Secondary_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Trigger_Touch("Button_Right_Trigger_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Trigger_Touch("Action_Button_Left_Trigger_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Trigger_Press("Action_Button_Right_Trigger_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Trigger_Press("Action_Button_Left_Trigger_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Grip_Touch("Action_Button_Right_Grip_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Grip_Touch("Action_Button_Left_Grip_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Grip_Press("Action_Button_Right_Grip_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Grip_Press("Action_Button_Left_Grip_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Thumbstick_Touch("Action_Button_Right_Thumbstick_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Thumbstick_Touch("Action_Button_Left_Thumbstick_Touch");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Right_Thumbstick_Press("Action_Button_Right_Thumbstick_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Left_Thumbstick_Press("Action_Button_Left_Thumbstick_Press");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_Menu("Button_Menu");
+const FName AVirtualRealityPawn::InputBindingName_Button_Action_Button_System("Button_System");
+
+// Axies
+
+void AVirtualRealityPawn::Input_Axis_Right_Thumbstick_X(float Value) { if (RightHand) RightHand->PawnInput_Axis_Thumbstick_X(Value); }
+void AVirtualRealityPawn::Input_Axis_Right_Thumbstick_Y(float Value) { if (RightHand) RightHand->PawnInput_Axis_Thumbstick_Y(Value); }
+void AVirtualRealityPawn::Input_Axis_Left_Thumbstick_X(float Value) { if (LeftHand) LeftHand->PawnInput_Axis_Thumbstick_X(Value); }
+void AVirtualRealityPawn::Input_Axis_Left_Thumbstick_Y(float Value) { if (LeftHand) LeftHand->PawnInput_Axis_Thumbstick_Y(Value); }
+void AVirtualRealityPawn::Input_Axis_Right_Trigger(float Value) { if (RightHand) RightHand->PawnInput_Axis_Trigger(Value); }
+void AVirtualRealityPawn::Input_Axis_Left_Trigger(float Value) { if (LeftHand) LeftHand->PawnInput_Axis_Trigger(Value); }
+void AVirtualRealityPawn::Input_Axis_Right_Grip(float Value) { if (RightHand) RightHand->PawnInput_Axis_Grip(Value); }
+void AVirtualRealityPawn::Input_Axis_Left_Grip(float Value) { if (LeftHand) LeftHand->PawnInput_Axis_Grip(Value); }
+
+// Buttons
+
+void AVirtualRealityPawn::Input_Button_Left_Primary_Press(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Primary(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Secondary_Press(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Secondary(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Primary_Press(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Primary(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Secondary_Press(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Secondary(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Primary_Touch(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Primary(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Secondary_Touch(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Secondary(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Primary_Touch(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Primary(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Secondary_Touch(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Secondary(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Trigger_Touch(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Trigger(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Trigger_Touch(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Trigger(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Trigger_Press(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Trigger(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Trigger_Press(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Trigger(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Grip_Touch(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Grip(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Grip_Touch(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Grip(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Grip_Press(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Grip(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Grip_Press(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Grip(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Thumbstick_Touch(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Thumbstick(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Thumbstick_Touch(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Thumbstick(EventType); }
+void AVirtualRealityPawn::Input_Button_Right_Thumbstick_Press(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_Thumbstick(EventType); }
+void AVirtualRealityPawn::Input_Button_Left_Thumbstick_Press(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Thumbstick(EventType); }
+void AVirtualRealityPawn::Input_Button_Menu(EButtonActionType EventType) { if (LeftHand) LeftHand->PawnInput_Button_Menu(EventType); }
+void AVirtualRealityPawn::Input_Button_System(EButtonActionType EventType) { if (RightHand) RightHand->PawnInput_Button_System(EventType); }

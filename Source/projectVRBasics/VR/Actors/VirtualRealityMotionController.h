@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
+#include "Interfaces/VRPlayerInput.h"
+
 #include "VirtualRealityMotionController.generated.h"
 
 class AVirtualRealityPawn;
@@ -13,7 +15,7 @@ class USplineComponent;
 
 
 UCLASS(Blueprintable, abstract)
-class PROJECTVRBASICS_API AVirtualRealityMotionController : public AActor
+class PROJECTVRBASICS_API AVirtualRealityMotionController : public AActor, public IVRPlayerInput
 {
 	GENERATED_BODY()
 	
@@ -83,4 +85,29 @@ protected:
 
 	UPROPERTY()
 	USplineComponent* SplineComponent;
+
+	UPROPERTY()
+	TScriptInterface<IVRPlayerInput> ConnectedActorWithInputInterface;
+
+	// BEGIN Input from Pawn implementation 
+public:
+	UFUNCTION() void PawnInput_Axis_Thumbstick_X(float Value);
+	UFUNCTION() void PawnInput_Axis_Thumbstick_Y(float Value);
+	UFUNCTION() void PawnInput_Axis_Trigger(float Value);
+	UFUNCTION() void PawnInput_Axis_Grip(float Value);
+
+	UFUNCTION() void PawnInput_Button_Primary(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_Secondary(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_Thumbstick(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_Trigger(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_Grip(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_Menu(EButtonActionType ActionType);
+	UFUNCTION() void PawnInput_Button_System(EButtonActionType ActionType);
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
+	float Axis_Thumbstick_X = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
+	float Axis_Thumbstick_Y = 0.f;
+	// END Input from Pawn implementation */
 };

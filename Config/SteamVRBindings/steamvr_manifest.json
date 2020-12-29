@@ -154,6 +154,10 @@
 			"type": "boolean"
 		},
 		{
+			"name": "/actions/main/in/Button_System",
+			"type": "boolean"
+		},
+		{
 			"name": "/actions/main/in/Axis_Left_Trigger axis",
 			"type": "vector1"
 		},
@@ -311,6 +315,7 @@
 			"/actions/main/in/Button_Left_Thumbstick_Touch": "Button_Left_Thumbstick_Touch",
 			"/actions/main/in/Button_Right_Thumbstick_Press": "Button_Right_Thumbstick_Press",
 			"/actions/main/in/Button_Left_Thumbstick_Press": "Button_Left_Thumbstick_Press",
+			"/actions/main/in/Button_System": "Button_System",
 			"/actions/main/in/Axis_Left_Trigger axis": "Axis_Left_Trigger",
 			"/actions/main/in/Axis_Right_Trigger axis": "Axis_Right_Trigger",
 			"/actions/main/in/Axis_Left_Grip axis": "Axis_Left_Grip",

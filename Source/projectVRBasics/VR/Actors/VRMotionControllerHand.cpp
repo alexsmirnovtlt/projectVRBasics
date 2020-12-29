@@ -55,7 +55,7 @@ void AVRMotionControllerHand::OnBeginPlayWaitEnd()
 	if (!MotionController->IsTracked() || MotionController->CurrentTrackingStatus != ETrackingStatus::Tracked)
 	{
 		// Timer will loop for now
-		UE_LOG(LogTemp, Error, TEXT("AVRMotionControllerHand Init was skipped for now. Will retry")); // TODO Check if that is actually may happen
+		UE_LOG(LogTemp, Warning, TEXT("AVRMotionControllerHand Init was skipped for now. Will retry"));
 		return;
 	}
 

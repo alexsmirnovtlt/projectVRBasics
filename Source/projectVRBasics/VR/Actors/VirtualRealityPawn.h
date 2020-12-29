@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 
+#include "Interfaces/VRPlayerInput.h"
+
 #include "VirtualRealityPawn.generated.h"
 
 class UCameraComponent;
@@ -13,6 +15,8 @@ class UCapsuleComponent;
 class AVirtualRealityMotionController;
 
 struct FStreamableHandle;
+
+DECLARE_DELEGATE_OneParam(InputActionType, EButtonActionType);
 
 USTRUCT(Blueprintable)
 struct FControllerType
@@ -40,6 +44,7 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 public:
 
@@ -107,4 +112,79 @@ private:
 
 	TSharedPtr<FStreamableHandle> LeftHandStreamableHandle;
 	TSharedPtr<FStreamableHandle> RightHandStreamableHandle;
+
+	// Input bindings
+	// Binding Input one time so controller states and objects that were grabbed by hand should not receive any input themselves and just implement IVRPlayerInputInterface BP events.
+	// Input gets received by a Pawn, then Pawn calls Interface functions on Virtual Reality Motion Controller class. Then VRMotionController may forward them to states and grabbed objects.
+
+	// Downside of this implementation is there is a lot of boilerplate code
+	// But upsides are:
+	// - Only 10 nodes in BPs: 3 axies and 7 button actions (because left hand state has no need to know about right hand input and so on). Full controll on what button was pressed/touched/released
+	// - Editing input should be a little easy to manage. No need to update all blueprints that implement interface if we are changing something. (f.e if every controller state and grabbed object used default ue4 input event, we need to update all BPs if we changed something)
+	// As the result ue4 input is completely detached from any logic in BP regarding input
+
+	protected:
+		static const FName InputBindingName_Axis_Right_Thumbstick_X;
+		static const FName InputBindingName_Axis_Right_Thumbstick_Y;
+		static const FName InputBindingName_Axis_Left_Thumbstick_X;
+		static const FName InputBindingName_Axis_Left_Thumbstick_Y;
+		static const FName InputBindingName_Axis_Right_Trigger;
+		static const FName InputBindingName_Axis_Left_Trigger;
+		static const FName InputBindingName_Axis_Right_Grip;
+		static const FName InputBindingName_Axis_Left_Grip;
+
+		static const FName InputBindingName_Button_Action_Button_Left_Primary_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Secondary_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Primary_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Secondary_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Primary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Secondary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Primary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Secondary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Trigger_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Trigger_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Trigger_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Trigger_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Grip_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Grip_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Grip_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Grip_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Thumbstick_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Thumbstick_Press;
+		static const FName InputBindingName_Button_Action_Button_Menu;
+		static const FName InputBindingName_Button_Action_Button_System;
+
+		UFUNCTION() void Input_Axis_Right_Thumbstick_X(float Value);
+		UFUNCTION() void Input_Axis_Right_Thumbstick_Y(float Value);
+		UFUNCTION() void Input_Axis_Left_Thumbstick_X(float Value);
+		UFUNCTION() void Input_Axis_Left_Thumbstick_Y(float Value);
+		UFUNCTION() void Input_Axis_Right_Trigger(float Value);
+		UFUNCTION() void Input_Axis_Left_Trigger(float Value);
+		UFUNCTION() void Input_Axis_Right_Grip(float Value);
+		UFUNCTION() void Input_Axis_Left_Grip(float Value);
+
+		UFUNCTION() void Input_Button_Left_Primary_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Secondary_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Primary_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Secondary_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Primary_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Secondary_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Primary_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Secondary_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Trigger_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Trigger_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Trigger_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Trigger_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Grip_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Grip_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Grip_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Grip_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Thumbstick_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Thumbstick_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Thumbstick_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Thumbstick_Press(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Menu(EButtonActionType EventType); // these and System_Press are not working for Oculus Rift S. Looks like steam VR and Oculus Home consumes those inputs. Maybe?
+		UFUNCTION() void Input_Button_System(EButtonActionType EventType);
 };
