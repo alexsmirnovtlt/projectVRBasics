@@ -22,7 +22,7 @@ class UVRPlayerInput : public UInterface
 };
 
 /**
- * 
+ * Implements ability to receive Player`s input without being subscribed to Input Events
  */
 class PROJECTVRBASICS_API IVRPlayerInput
 {
