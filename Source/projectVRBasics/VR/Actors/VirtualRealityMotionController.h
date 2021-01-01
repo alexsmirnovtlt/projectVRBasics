@@ -35,16 +35,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
 	void ChangeToDefaultState(bool NotifyPairedControllerIfAble = true);
 
+	// Where is location and rotation of point in space from where we can cast rays or draw splines to perform various checks (where teleport to or at what actor contoller are we pointing)
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
-	FVector GetControllerWorldOriginLocation() const;
-	virtual FVector GetControllerWorldOriginLocation_Implementation() const;
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
-	FRotator GetControllerWorldOriginRotation() const;
-	virtual FRotator GetControllerWorldOriginRotation_Implementation() const;
-	//For that 2 functions above we are making sure that Origin will return this Actor location and rotation but it may be overridden in BP. So joystick controller will return its MotionController location and hand controler will return its arrow location
-	
-	//UFUNCTION(BlueprintCallable, Category = "Motion Controller")
-	//FTransform GetMotionControllerRelativeTransform() const;
+	FTransform GetControllerWorldOriginTransform() const;
+	virtual FTransform GetControllerWorldOriginTransform_Implementation() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	USplineComponent* GetSplineComponent() const;
@@ -91,23 +85,27 @@ protected:
 
 	// BEGIN Input from Pawn implementation 
 public:
-	UFUNCTION() void PawnInput_Axis_Thumbstick_X(float Value);
-	UFUNCTION() void PawnInput_Axis_Thumbstick_Y(float Value);
-	UFUNCTION() void PawnInput_Axis_Trigger(float Value);
-	UFUNCTION() void PawnInput_Axis_Grip(float Value);
+	void PawnInput_Axis_Thumbstick_X(float Value);
+	void PawnInput_Axis_Thumbstick_Y(float Value);
+	void PawnInput_Axis_Trigger(float Value);
+	void PawnInput_Axis_Grip(float Value);
 
-	UFUNCTION() void PawnInput_Button_Primary(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_Secondary(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_Thumbstick(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_Trigger(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_Grip(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_Menu(EButtonActionType ActionType);
-	UFUNCTION() void PawnInput_Button_System(EButtonActionType ActionType);
+	void PawnInput_Button_Primary(EButtonActionType ActionType);
+	void PawnInput_Button_Secondary(EButtonActionType ActionType);
+	void PawnInput_Button_Thumbstick(EButtonActionType ActionType);
+	void PawnInput_Button_Trigger(EButtonActionType ActionType);
+	void PawnInput_Button_Grip(EButtonActionType ActionType);
+	void PawnInput_Button_Menu(EButtonActionType ActionType);
+	void PawnInput_Button_System(EButtonActionType ActionType);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
-	float Axis_Thumbstick_X = 0.f;
+	float Axis_Thumbstick_X_Value = 0.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
-	float Axis_Thumbstick_Y = 0.f;
+	float Axis_Thumbstick_Y_Value = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
+	float Axis_Trigger_Value = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Controller Input")
+	float Axis_Grip_Value = 0.f;
 	// END Input from Pawn implementation */
 };

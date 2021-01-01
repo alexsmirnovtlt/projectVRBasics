@@ -6,6 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 
 #include "ActorComponents/HandCollisionUpdaterComponent.h"
+#include "VRMotionControllerHand.h"
 
 
 AHandActor::AHandActor()
@@ -35,6 +36,24 @@ void AHandActor::BeginPlay()
 	ChangeHandPhysProperties(false, false); // Before we setup our phys costraint hand should not collide with anything
 	
 	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
+}
+
+void AHandActor::SetupHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController)
+{
+	if (auto CollisionSphere = GetCollisionSphereComponent())
+	{
+		CollisionSphere->OnComponentBeginOverlap.AddDynamic(VRMotionController, &AVRMotionControllerHand::HandCollisionSphereBeginOverlap);
+		CollisionSphere->OnComponentEndOverlap.AddDynamic(VRMotionController, &AVRMotionControllerHand::HandCollisionSphereEndOverlap);
+	}
+}
+
+void AHandActor::RemoveHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController)
+{
+	if (auto CollisionSphere = GetCollisionSphereComponent())
+	{
+		CollisionSphere->OnComponentBeginOverlap.RemoveDynamic(VRMotionController, &AVRMotionControllerHand::HandCollisionSphereBeginOverlap);
+		CollisionSphere->OnComponentEndOverlap.RemoveDynamic(VRMotionController, &AVRMotionControllerHand::HandCollisionSphereEndOverlap);
+	}
 }
 
 void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulatePhysics)
@@ -70,6 +89,11 @@ USkeletalMeshComponent* AHandActor::GetSkeletalHandMeshComponent_Implementation(
 USceneComponent* AHandActor::GetArrowComponent_Implementation() const
 {
 	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetArrowComponent()"), *this->GetClass()->GetFName().ToString());
+	return nullptr;
+}
+
+UPrimitiveComponent* AHandActor::GetCollisionSphereComponent_Implementation() const
+{
 	return nullptr;
 }
 

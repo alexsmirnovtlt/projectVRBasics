@@ -26,6 +26,7 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
+	virtual void Tick(float DeltaTime) override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
@@ -44,6 +45,20 @@ public:
 	class AHandPhysConstraint* GetPhysConstraint();
 	//UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	//void ChangeHandAnimationEnum(int32 index);
+
+	 // What location and rotation we need to cast a ray from to determine which IHandInteractable actor are we pointing to. If hand is in Idle state, could be Arrow`s Transform. If we are holding something, might be a different transform
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
+	FTransform GetPointingWorldTransform() const;
+	FTransform GetPointingWorldTransform_Implementation() const;
+
+	 // Is hand able to grab or interact with collided actors that implements IHandInteractable
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	bool IsHandInIdleState() const;
+
+	UFUNCTION()
+	void HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 protected:
 
@@ -68,7 +83,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	AHandPhysConstraint* PhysConstraint;
 
-	bool bHandFollowsController;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hand Motion Controller")
+	bool bHandFollowsController = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hand Motion Controller")
+	bool bIsGrabbing = false;
 
 private:
 

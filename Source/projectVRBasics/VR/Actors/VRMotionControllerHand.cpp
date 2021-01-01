@@ -41,13 +41,25 @@ void AVRMotionControllerHand::Destroyed()
 {
 	Super::Destroyed();
 
-	if (HandActor) HandActor->Destroy();
+	if (HandActor)
+	{
+		HandActor->RemoveHandSphereCollisionCallbacks(this);
+		HandActor->Destroy();
+	}
+
 	if (PhysConstraint) PhysConstraint->Destroy();
 
 	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_BeginPlayWait))
 	{
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
 	}
+}
+
+void AVRMotionControllerHand::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+
 }
 
 void AVRMotionControllerHand::OnBeginPlayWaitEnd()
@@ -64,6 +76,8 @@ void AVRMotionControllerHand::OnBeginPlayWaitEnd()
 	HandActor = GetWorld()->SpawnActor<AHandActor>(PhysicalHandClass);
 	HandActor->SetOwner(this);
 	HandActor->SetInstigator(OwningVRPawn);
+
+	HandActor->SetupHandSphereCollisionCallbacks(this);
 
 	HandActor->ChangeHandPhysProperties(false, true);
 	StartFollowingPhantomHand(false);
@@ -176,13 +190,33 @@ void AVRMotionControllerHand::ChangeHandAnimationEnum_Implementation(int32 index
 	// Left and Right hand animators are different so they will override this function to setup their Animation Blueprint accordingly
 }*/
 
+bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
+{
+	return !bIsGrabbing && Axis_Trigger_Value < 0.5f && Axis_Grip_Value < 0.5f;
+}
+
 USkeletalMeshComponent* AVRMotionControllerHand::GetPhantomHandSkeletalMesh_Implementation() const
 {
 	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetPhantomHandSkeletalMesh()"), *this->GetClass()->GetFName().ToString());
 	return nullptr;
 }
 
+FTransform AVRMotionControllerHand::GetPointingWorldTransform_Implementation() const
+{
+	return GetControllerWorldOriginTransform();
+}
+
 AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 {
 	return PhysConstraint;
+}
+
+void AVRMotionControllerHand::HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("%s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+}
+
+void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("%s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
 }

@@ -183,7 +183,7 @@ void UVRTeleportLogic::UpdateTargetTeleportLocation(bool bHit, FNavLocation NavL
 		// Rotating arrow relative to motion controller and joystick input
 		if (OwningMotionController)
 		{
-			auto ControllerWorldYaw = OwningMotionController->GetControllerWorldOriginRotation().Yaw;
+			auto ControllerWorldYaw = OwningMotionController->GetControllerWorldOriginTransform().GetRotation().Rotator().Yaw;
 			
 			auto InputLocalRotation = FVector(-InputX, InputY, 0.f).Rotation();
 			auto InputWorldRotation = FRotator(0.f, InputLocalRotation.Yaw - 90.f + ControllerWorldYaw, 0.f);

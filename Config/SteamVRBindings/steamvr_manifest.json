@@ -122,22 +122,6 @@
 			"type": "boolean"
 		},
 		{
-			"name": "/actions/main/in/Button_Right_Trigger_Press",
-			"type": "boolean"
-		},
-		{
-			"name": "/actions/main/in/Button_Left_Trigger_Press",
-			"type": "boolean"
-		},
-		{
-			"name": "/actions/main/in/Button_Right_Grip_Press",
-			"type": "boolean"
-		},
-		{
-			"name": "/actions/main/in/Button_Left_Grip_Press",
-			"type": "boolean"
-		},
-		{
 			"name": "/actions/main/in/Button_Right_Thumbstick_Touch",
 			"type": "boolean"
 		},
@@ -307,10 +291,6 @@
 			"/actions/main/in/Button_Right_Secondary_Touch": "Button_Right_Secondary_Touch",
 			"/actions/main/in/Button_Right_Trigger_Touch": "Button_Right_Trigger_Touch",
 			"/actions/main/in/Button_Left_Trigger_Touch": "Button_Left_Trigger_Touch",
-			"/actions/main/in/Button_Right_Trigger_Press": "Button_Right_Trigger_Press",
-			"/actions/main/in/Button_Left_Trigger_Press": "Button_Left_Trigger_Press",
-			"/actions/main/in/Button_Right_Grip_Press": "Button_Right_Grip_Press",
-			"/actions/main/in/Button_Left_Grip_Press": "Button_Left_Grip_Press",
 			"/actions/main/in/Button_Right_Thumbstick_Touch": "Button_Right_Thumbstick_Touch",
 			"/actions/main/in/Button_Left_Thumbstick_Touch": "Button_Left_Thumbstick_Touch",
 			"/actions/main/in/Button_Right_Thumbstick_Press": "Button_Right_Thumbstick_Press",

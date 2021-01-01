@@ -115,14 +115,9 @@ UControllerState* AVirtualRealityMotionController::GetControllerState() const
 	return ControllerState;
 }
 
-FVector AVirtualRealityMotionController::GetControllerWorldOriginLocation_Implementation() const
+FTransform AVirtualRealityMotionController::GetControllerWorldOriginTransform_Implementation() const
 {
-	return MotionController->GetComponentLocation();
-}
-
-FRotator AVirtualRealityMotionController::GetControllerWorldOriginRotation_Implementation() const
-{
-	return MotionController->GetComponentRotation();
+	return MotionController->GetComponentTransform();
 }
 
 USplineComponent* AVirtualRealityMotionController::GetSplineComponent_Implementation() const
@@ -145,23 +140,24 @@ bool AVirtualRealityMotionController::IsRightHandController()
 
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_X(float Value)
 {
-	Axis_Thumbstick_X = Value; // storing value for use in BP
-	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X, Axis_Thumbstick_Y); // Forwarding input to controller state if able
+	Axis_Thumbstick_X_Value = Value; // storing value for use in BP
+	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding input to controller state if able
 	 // TODO MUST CHECK BELOW
-	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X, Axis_Thumbstick_Y); // Forwarding to grabbed object or UI currently in use
-	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X, Axis_Thumbstick_Y); // call to BP event
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding to grabbed object or UI currently in use
+	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // call to BP event
 }
 
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
 {
-	Axis_Thumbstick_Y = Value;
-	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X, Axis_Thumbstick_Y);
-	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X, Axis_Thumbstick_Y);
-	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X, Axis_Thumbstick_Y);
+	Axis_Thumbstick_Y_Value = Value;
+	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
+	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Thumbstick(ConnectedActorWithInputInterface.GetObject(), Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
+	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
 }
 
 void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
 {
+	Axis_Trigger_Value = Value;
 	if (ControllerState) ControllerState->Execute_Input_Axis_Trigger(ControllerState, Value);
 	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Trigger(ConnectedActorWithInputInterface.GetObject(), Value);
 	Execute_Input_Axis_Trigger(this, Value);
@@ -169,6 +165,7 @@ void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
 
 void AVirtualRealityMotionController::PawnInput_Axis_Grip(float Value)
 {
+	Axis_Grip_Value = Value;
 	if (ControllerState) ControllerState->Execute_Input_Axis_Grip(ControllerState, Value);
 	if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Grip(ConnectedActorWithInputInterface.GetObject(), Value);
 	Execute_Input_Axis_Grip(this, Value);

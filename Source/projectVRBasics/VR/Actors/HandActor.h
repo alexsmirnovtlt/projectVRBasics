@@ -8,6 +8,7 @@
 #include "HandActor.generated.h"
 
 class UHandCollisionUpdaterComponent;
+class AVRMotionControllerHand;
 class USkeletalMeshComponent;
 class USceneComponent;
 
@@ -30,10 +31,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	void RefreshWeldedBoneDriver();
 
+	UFUNCTION()
+	void SetupHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController);
+	UFUNCTION()
+	void RemoveHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController);
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	USkeletalMeshComponent* GetSkeletalHandMeshComponent() const;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	USceneComponent* GetArrowComponent() const;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	UPrimitiveComponent* GetCollisionSphereComponent() const;
 
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	FName& GetRootBoneName();

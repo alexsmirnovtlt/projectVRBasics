@@ -120,7 +120,8 @@ private:
 	// Downside of this implementation is there is a lot of boilerplate code
 	// But upsides are:
 	// - Only 10 nodes in BPs: 3 axies and 7 button actions (because left hand state has no need to know about right hand input and so on). Full controll on what button was pressed/touched/released
-	// - Editing input should be a little easy to manage. No need to update all blueprints that implement interface if we are changing something. (f.e if every controller state and grabbed object used default ue4 input event, we need to update all BPs if we changed something)
+	// - Changing ue4 Input Settings will not affect any BPs
+	// - Custom thresholds for Touch and Press Events (currently for Trigger and Grip buttons)
 	// As the result ue4 input is completely detached from any logic in BP regarding input
 
 	protected:
@@ -143,12 +144,12 @@ private:
 		static const FName InputBindingName_Button_Action_Button_Right_Secondary_Touch;
 		static const FName InputBindingName_Button_Action_Button_Right_Trigger_Touch;
 		static const FName InputBindingName_Button_Action_Button_Left_Trigger_Touch;
-		static const FName InputBindingName_Button_Action_Button_Right_Trigger_Press;
-		static const FName InputBindingName_Button_Action_Button_Left_Trigger_Press;
+		//static const FName InputBindingName_Button_Action_Button_Right_Trigger_Press;
+		//static const FName InputBindingName_Button_Action_Button_Left_Trigger_Press;
 		static const FName InputBindingName_Button_Action_Button_Right_Grip_Touch;
 		static const FName InputBindingName_Button_Action_Button_Left_Grip_Touch;
-		static const FName InputBindingName_Button_Action_Button_Right_Grip_Press;
-		static const FName InputBindingName_Button_Action_Button_Left_Grip_Press;
+		//static const FName InputBindingName_Button_Action_Button_Right_Grip_Press;
+		//static const FName InputBindingName_Button_Action_Button_Left_Grip_Press;
 		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Touch;
 		static const FName InputBindingName_Button_Action_Button_Left_Thumbstick_Touch;
 		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Press;
@@ -165,26 +166,42 @@ private:
 		UFUNCTION() void Input_Axis_Right_Grip(float Value);
 		UFUNCTION() void Input_Axis_Left_Grip(float Value);
 
-		UFUNCTION() void Input_Button_Left_Primary_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Secondary_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Primary_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Secondary_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Primary_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Secondary_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Primary_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Secondary_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Primary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Secondary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Primary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Secondary(EButtonActionType EventType);
+
 		UFUNCTION() void Input_Button_Right_Trigger_Touch(EButtonActionType EventType);
 		UFUNCTION() void Input_Button_Left_Trigger_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Trigger_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Trigger_Press(EButtonActionType EventType);
 		UFUNCTION() void Input_Button_Right_Grip_Touch(EButtonActionType EventType);
 		UFUNCTION() void Input_Button_Left_Grip_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Grip_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Grip_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Thumbstick_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Thumbstick_Touch(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Right_Thumbstick_Press(EButtonActionType EventType);
-		UFUNCTION() void Input_Button_Left_Thumbstick_Press(EButtonActionType EventType);
+
+		UFUNCTION() void Input_Button_Left_Thumbstick(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Thumbstick(EButtonActionType EventType);
+
 		UFUNCTION() void Input_Button_Menu(EButtonActionType EventType); // these and System_Press are not working for Oculus Rift S. Looks like steam VR and Oculus Home consumes those inputs. Maybe?
 		UFUNCTION() void Input_Button_System(EButtonActionType EventType);
+
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		bool bIsTriggerCapacitive = true; // TODO make false and create custom settings for every headset. Maybe move this to controller class
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		bool bIsGripCapacitive = false;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup", meta = (EditCondition = "!bIsTriggerCapacitive"))
+		float AxisTriggerTouchThreshold = 0.0001f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup", meta = (EditCondition = "!bIsGripCapacitive"))
+		float AxisGripTouchThreshold = 0.01f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		float AxisTriggerPressThreshold = 0.95f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		float AxisGripPressThreshold = 0.95f;
+	private:
+		bool bRightTriggerPressed = false;
+		bool bRightTriggerTouched = false;
+		bool bRightGripPressed = false;
+		bool bRightGripTouched = false;
+
+		bool bLeftTriggerPressed = false;
+		bool bLeftTriggerTouched = false;
+		bool bLeftGripPressed = false;
+		bool bLeftGripTouched = false;
 };

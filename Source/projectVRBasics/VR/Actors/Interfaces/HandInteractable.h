@@ -28,6 +28,18 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandExit(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
 	
+	// Same as OnHandEnter, but collider is hand`s grab sphere, not the hand itself 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnCanBeGrabbedByHand_Start(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnCanBeGrabbedByHand_End(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+
+	// When hand`s arrow points at IHandInteractable actor
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnHandPointing_Start(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnHandPointing_End(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
+
 	// When phantom hand (actual motion controller world location that ignores any physics collision) overlaps something
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnPhantomHandEnter(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
