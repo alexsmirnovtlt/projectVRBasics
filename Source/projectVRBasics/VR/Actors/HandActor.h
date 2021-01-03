@@ -65,6 +65,9 @@ protected:
 	// Optional. If not None it should be custom collision channel (Project Settings -> Collision -> Preset -> New) that have at least Collision Enabled: Query and Physics that ignores all channels
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Hand Setup")
 	FName NoCollisionPresetName;
+	// By default Sphere always will overlap WorldDynamic only. Ideally it only should overlap components that we can interact with
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Hand Setup")
+	FName OverlapSpherePresetName;
 
 	UPROPERTY()
 	UHandCollisionUpdaterComponent* HandCollisionUpdaterComponent;

@@ -42,6 +42,10 @@ AHandPhysConstraint::AHandPhysConstraint()
 
 	FirstConstraintComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("FirstConstraintPrimitiveComponent"));
 	FirstConstraintComponent->SetBoxExtent(FVector::OneVector, false);
+	FirstConstraintComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	FirstConstraintComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	FirstConstraintComponent->SetGenerateOverlapEvents(false);
+	FirstConstraintComponent->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 	FirstConstraintComponent->SetupAttachment(RootComponent);
 }
 

@@ -18,7 +18,8 @@ AHandActor::AHandActor()
 	PalmSocketName = TEXT("palm_socket");
 	NoCollisionPresetName = TEXT("None");
 	ActiveCollisionPresetName = TEXT("PhysicsActor");
-	
+	OverlapSpherePresetName = TEXT("None");
+
 	SetTickGroup(ETickingGroup::TG_PrePhysics);
 
 	HandCollisionUpdaterComponent = CreateDefaultSubobject<UHandCollisionUpdaterComponent>(TEXT("HandCollisionUpdaterComponent"));
@@ -36,6 +37,21 @@ void AHandActor::BeginPlay()
 	ChangeHandPhysProperties(false, false); // Before we setup our phys costraint hand should not collide with anything
 	
 	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
+
+	// Setting Collision to hand sphere so it should only create overlap events only with components that need to interact with that sphere to get some sort of control over hand (grabbable object)
+	if (auto CollisionSphere = GetCollisionSphereComponent())
+	{
+		CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		CollisionSphere->SetGenerateOverlapEvents(true);
+
+		if (OverlapSpherePresetName.IsNone())
+		{
+			CollisionSphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+			CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+		}
+		else CollisionSphere->SetCollisionProfileName(OverlapSpherePresetName);
+	}
 }
 
 void AHandActor::SetupHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController)

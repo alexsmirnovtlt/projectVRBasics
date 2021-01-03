@@ -11,6 +11,7 @@
 #include "HandActor.h"
 #include "VirtualRealityPawn.h"
 #include "HandPhysConstraint.h"
+#include "Interfaces/HandInteractable.h"
 
 
 AVRMotionControllerHand::AVRMotionControllerHand()
@@ -161,6 +162,7 @@ void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly
 		//StartFollowingPhantomHand(true);
 		SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
 	}
+
 	Super::OnPawnTeleport(bStarted, bCameraViewOnly);
 }
 
@@ -213,10 +215,17 @@ AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 
 void AVRMotionControllerHand::HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("%s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+	// TODO this and EndOverlap gets triggered a lot more than needed. Custom Collision presets with custom object types are better suited for that
+	//UE_LOG(LogTemp, Warning, TEXT("BeginOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+
+	// If we just cast OtherActor to IHandInteractable, Implements() will return true and Cast<IHandInteractable>(OtherActor) will return nullptr because we added interface in BP and not in cpp class
+	if (OtherActor->Implements<UHandInteractable>()) IHandInteractable::Execute_OnHandEnter(OtherActor, this, OtherComp);
+	
 }
 
 void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("%s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+
+	if (OtherActor->Implements<UHandInteractable>()) IHandInteractable::Execute_OnHandExit(OtherActor, this, OtherComp);
 }
