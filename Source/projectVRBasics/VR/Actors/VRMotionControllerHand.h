@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "VirtualRealityMotionController.h"
 
+#include "Interfaces/HandInteractable.h"
+
 #include "VRMotionControllerHand.generated.h"
 
 class AHandActor;
@@ -43,8 +45,8 @@ public:
 	void StopFollowingPhysConstraint();
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	class AHandPhysConstraint* GetPhysConstraint();
-	//UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
-	//void ChangeHandAnimationEnum(int32 index);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	void ChangeHandAnimationStateEnum(uint8 byte) const;
 
 	 // What location and rotation we need to cast a ray from to determine which IHandInteractable actor are we pointing to. If hand is in Idle state, could be Arrow`s Transform. If we are holding something, might be a different transform
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
@@ -83,11 +85,20 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	AHandPhysConstraint* PhysConstraint;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hand Motion Controller")
+	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
 	bool bHandFollowsController = false;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hand Motion Controller")
+	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
 	bool bIsGrabbing = false;
+	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
+	TScriptInterface<IHandInteractable> ConnectedActorWithHandInteractableInterface;
 
+	// BEGIN Grab and Drop functionality
+	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller")
+	TArray<AActor*> OverlappingActorsArray;
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller Events")
+	int32 GetClosestGrabbableActorIndex() const;
+	// END Grab and Drop functionality
 private:
 
 	FTimerHandle TimerHandle_BeginPlayWait;

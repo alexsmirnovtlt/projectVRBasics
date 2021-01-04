@@ -80,7 +80,7 @@ protected:
 	UPROPERTY()
 	USplineComponent* SplineComponent;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
 	TScriptInterface<IVRPlayerInput> ConnectedActorWithInputInterface;
 
 	// BEGIN Input from Pawn implementation 

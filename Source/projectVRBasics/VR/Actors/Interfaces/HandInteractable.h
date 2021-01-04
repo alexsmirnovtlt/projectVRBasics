@@ -23,40 +23,47 @@ public:
 
 	// When physical hand overlaps with something, it tries to cast to to this interface and executes OnHandEnter
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandEnter(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnHandEnter(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	// When physical hand leaves overlapped area
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandExit(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnHandExit(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	
 	// Same as OnHandEnter, but collider is hand`s grab sphere, not the hand itself 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnCanBeGrabbedByHand_Start(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnCanBeGrabbedByHand_Start(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnCanBeGrabbedByHand_End(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnCanBeGrabbedByHand_End(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 
 	// When hand`s arrow points at IHandInteractable actor
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandPointing_Start(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
+	void OnHandPointing_Start(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandPointing_End(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
+	void OnHandPointing_End(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
 
 	// When phantom hand (actual motion controller world location that ignores any physics collision) overlaps something
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnPhantomHandEnter(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnPhantomHandEnter(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	// When phantom hand leaves overlapped area
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnPhantomHandExit(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnPhantomHandExit(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 
 	// When player input indicates that he wants to grab something
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnGrab(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnGrab(AVRMotionControllerHand* HandMotionController);
 	// When player input indicates that he wants to drop something he already grabbed
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnDrop(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnDrop(AVRMotionControllerHand* HandMotionController);
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandTeleported(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent);
+	void OnHandTeleported(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 
+	// When player tries to grab but overlaps multiple IHandInteractable actors, the one with the lowest distance will be chosen
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
-	FVector GetWorldLocationOfGrabCheck() const;// When player tries to grab but overlaps multiple IHandInteractable actors, the one with the lowest distance will be chosen
+	float GetWorldSquaredDistanceToMotionController(const AVRMotionControllerHand* HandMotionController) const;
+	float GetWorldSquaredDistanceToMotionController_Implementation(const AVRMotionControllerHand* HandMotionController) const { return 0.f; };
+
+	// Default False - Object is held only when we press button and drops on release. True - First button press will grab and second will drop
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
+	bool IsRequiresSecondButtonPressToDrop() const; 
+	bool IsRequiresSecondButtonPressToDrop_Implementation() const { return false; };
 };

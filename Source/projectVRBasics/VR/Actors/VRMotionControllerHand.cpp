@@ -11,7 +11,6 @@
 #include "HandActor.h"
 #include "VirtualRealityPawn.h"
 #include "HandPhysConstraint.h"
-#include "Interfaces/HandInteractable.h"
 
 
 AVRMotionControllerHand::AVRMotionControllerHand()
@@ -186,11 +185,10 @@ void AVRMotionControllerHand::AttachPhysConstraintToPhantomHand()
 	PhysConstraint->AttachToComponent(MotionController, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
-/*
-void AVRMotionControllerHand::ChangeHandAnimationEnum_Implementation(int32 index)
+void AVRMotionControllerHand::ChangeHandAnimationStateEnum_Implementation(uint8 byte) const
 {
 	// Left and Right hand animators are different so they will override this function to setup their Animation Blueprint accordingly
-}*/
+}
 
 bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
 {
@@ -215,17 +213,46 @@ AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 
 void AVRMotionControllerHand::HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!OtherActor->Implements<UHandInteractable>()) return; // If we just cast OtherActor to IHandInteractable, Implements() will return true and Cast<IHandInteractable>(OtherActor) will return nullptr because we added interface in BP and not in cpp class
+
+	OverlappingActorsArray.Add(OtherActor);
+	IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OtherActor, this, OtherComp);
+	//IHandInteractable::OnCanBeGrabbedByHand_Start(OtherActor, this, OtherComp);
+
 	// TODO this and EndOverlap gets triggered a lot more than needed. Custom Collision presets with custom object types are better suited for that
 	//UE_LOG(LogTemp, Warning, TEXT("BeginOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
-
-	// If we just cast OtherActor to IHandInteractable, Implements() will return true and Cast<IHandInteractable>(OtherActor) will return nullptr because we added interface in BP and not in cpp class
-	if (OtherActor->Implements<UHandInteractable>()) IHandInteractable::Execute_OnHandEnter(OtherActor, this, OtherComp);
-	
 }
 
 void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+	if (!OtherActor->Implements<UHandInteractable>()) return;
+	
+	OverlappingActorsArray.Remove(OtherActor);
+	IHandInteractable::Execute_OnCanBeGrabbedByHand_End(OtherActor, this, OtherComp);
+	//IHandInteractable::OnCanBeGrabbedByHand_End(OtherActor, this, OtherComp);
 
-	if (OtherActor->Implements<UHandInteractable>()) IHandInteractable::Execute_OnHandExit(OtherActor, this, OtherComp);
+	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+}
+
+
+
+int32 AVRMotionControllerHand::GetClosestGrabbableActorIndex() const
+{
+	if (OverlappingActorsArray.Num() == 0) return -1;
+	else if (OverlappingActorsArray.Num() == 1) return 0;
+
+	int32 IndexToReturn = 0;
+	float CurrentDistance = IHandInteractable::Execute_GetWorldSquaredDistanceToMotionController(OverlappingActorsArray[0], this);
+
+	for (int32 i = 1; i < OverlappingActorsArray.Num(); ++i)
+	{
+		float Distance = IHandInteractable::Execute_GetWorldSquaredDistanceToMotionController(OverlappingActorsArray[i], this);
+		if (Distance < CurrentDistance)
+		{
+			IndexToReturn = i;
+			CurrentDistance = Distance;
+		}
+	}
+
+	return IndexToReturn;
 }
