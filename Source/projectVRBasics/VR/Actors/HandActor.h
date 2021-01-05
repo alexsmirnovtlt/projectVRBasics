@@ -42,6 +42,8 @@ public:
 	USceneComponent* GetArrowComponent() const;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	UPrimitiveComponent* GetCollisionSphereComponent() const;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	USceneComponent* GetActorAttachmentComponent() const;
 
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	FName& GetRootBoneName();

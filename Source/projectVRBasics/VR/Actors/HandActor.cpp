@@ -113,6 +113,11 @@ UPrimitiveComponent* AHandActor::GetCollisionSphereComponent_Implementation() co
 	return nullptr;
 }
 
+USceneComponent* AHandActor::GetActorAttachmentComponent_Implementation() const
+{
+	return nullptr;
+}
+
 float AHandActor::GetHandMass() const
 {
 	return HandMass;
