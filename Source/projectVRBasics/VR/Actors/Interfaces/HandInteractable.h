@@ -55,7 +55,10 @@ public:
 	void OnDrop(AVRMotionControllerHand* HandMotionController);
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandTeleported(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
+	void OnFinishedAttachingToHand();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnHandTeleported(AVRMotionControllerHand* HandMotionController);
 
 	// When player tries to grab but overlaps multiple IHandInteractable actors, the one with the lowest distance will be chosen
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")

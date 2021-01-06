@@ -50,4 +50,8 @@ public:
 	void Input_Button_Menu(EButtonActionType ActionType);
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IVRPlayerInput")
 	void Input_Button_System(EButtonActionType ActionType);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
+	bool GetShouldConsumeInput() const;
+	bool GetShouldConsumeInput_Implementation() const { return false; };
 };

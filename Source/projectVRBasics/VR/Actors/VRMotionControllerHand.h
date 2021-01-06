@@ -86,29 +86,62 @@ protected:
 	AHandPhysConstraint* PhysConstraint;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
-	bool bHandFollowsController = false;
-	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
-	bool bIsGrabbing = false;
-	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
-	TScriptInterface<IHandInteractable> ConnectedActorWithHandInteractableInterface;
+	bool bHandFollowsController = false; // TODO Check if its even in use anywhere
 
-	// BEGIN Grab and Drop functionality
-	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller")
+	// BEGIN Logic Related to interaction with IHandInteractable Objects
+public:
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
+	bool IsHandInGrabState() { return bIsGrabbing; }
+
+protected:
+
+	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool bIsGrabbing = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool bIsAttachmentIsInTransitionToHand = false;
+
+	UPROPERTY()
+	FTransform InitialAttachmentTransform;
+
+	UPROPERTY()
+	float CurrentAttachmentLerpValue = 0.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	float AttachmentTimeSec = 0.2f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	float NoCollisionOnDropSec = 1.0f;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	AActor* ConnectedActorWithHandInteractableInterface;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	TArray<AActor*> OverlappingActorsArray;
 
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller Events")
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	int32 GetClosestGrabbableActorIndex() const;
-	// END Grab and Drop functionality
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool TryToGrabActor();
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	void StartMovingActorToHandForAttachment(AActor* ActorToAttach, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation);
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	void UpdateAttachedActorLocation(float DeltaTime);
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool TryToReleaseGrabbedActor(bool bForceRelease = false);
+
+	// END Logic Related to interaction with IHandInteractable Objects
+
 private:
 
-	FTimerHandle TimerHandle_BeginPlayWait;
-	FTimerHandle TimerHandle_TeleportPhysicsResetWait;
+	FTimerHandle TimerHandle_BeginPlayWait; 
+	FTimerHandle TimerHandle_NoCollisionOnDropWait;
 
 	UFUNCTION()
 	void OnBeginPlayWaitEnd();
 	UFUNCTION()
-	void OnTeleportWaitForPhysicsResetEnd();
+	void OnNoCollisionOnDropTimerEnd();
 
-	float TeleportWaitTimeForPhysicsReset = 0.1f;
 	bool bPhysConstraintAttachedToPhantomHand = false;
 };

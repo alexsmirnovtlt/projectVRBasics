@@ -59,7 +59,7 @@ void AVRMotionControllerHand::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
+	if (bIsAttachmentIsInTransitionToHand) UpdateAttachedActorLocation(DeltaTime); // If we grabbed something, updating its location here until it reaches its destination
 }
 
 void AVRMotionControllerHand::OnBeginPlayWaitEnd()
@@ -155,7 +155,11 @@ void AVRMotionControllerHand::StopFollowingPhysConstraint()
 
 void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly)
 {
-	if (!bStarted)
+	if (bStarted)
+	{
+		if(ConnectedActorWithHandInteractableInterface) IHandInteractable::Execute_OnHandTeleported(ConnectedActorWithHandInteractableInterface, this);
+	}
+	else
 	{
 		// TODO Attach constraint back and follow it if not already
 		//StartFollowingPhantomHand(true);
@@ -163,12 +167,6 @@ void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly
 	}
 
 	Super::OnPawnTeleport(bStarted, bCameraViewOnly);
-}
-
-void AVRMotionControllerHand::OnTeleportWaitForPhysicsResetEnd()
-{
-	//HandActor->GetSkeletalHandMeshComponent()->SetSimulatePhysics(true);
-	//MakeHandFollowMovementController(true);
 }
 
 void AVRMotionControllerHand::AttachPhysConstraintToPhantomHand()
@@ -234,7 +232,7 @@ void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent*
 	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
 }
 
-
+// BEGIN Logic Related to interaction with IHandInteractable Objects
 
 int32 AVRMotionControllerHand::GetClosestGrabbableActorIndex() const
 {
@@ -256,3 +254,118 @@ int32 AVRMotionControllerHand::GetClosestGrabbableActorIndex() const
 
 	return IndexToReturn;
 }
+
+bool AVRMotionControllerHand::TryToGrabActor()
+{
+	if (bIsAttachmentIsInTransitionToHand) return false;
+
+	// Check if we have grabbed object already and it drops on second Grab Event, so drop it instead of grab
+	if (bIsGrabbing && ConnectedActorWithHandInteractableInterface && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface))
+	{
+		TryToReleaseGrabbedActor(true);
+		return false;
+	}
+
+	if (bIsGrabbing) return false; // TODO maybe some logic applies here
+
+	int32 ActorIndex = GetClosestGrabbableActorIndex();
+	if (ActorIndex == -1) return false;
+
+	bIsGrabbing = true;
+	bIsAttachmentIsInTransitionToHand = true;
+
+	ConnectedActorWithHandInteractableInterface = OverlappingActorsArray[ActorIndex];
+	IHandInteractable::Execute_OnGrab(ConnectedActorWithHandInteractableInterface, this);
+
+	// TODO Also update IVRPlayerInput interface
+
+	return true;
+}
+
+bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
+{
+	if (!bIsGrabbing || !ConnectedActorWithHandInteractableInterface || bIsAttachmentIsInTransitionToHand) return false; // TODO maybe some logic applies here
+
+	// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop
+	if (!bForceRelease && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
+
+	bIsGrabbing = false;
+
+	IHandInteractable::Execute_OnDrop(ConnectedActorWithHandInteractableInterface, this);
+	ConnectedActorWithHandInteractableInterface = nullptr;
+
+	// Disabling collision while dropping actor so it can drop or be thrown correctly
+	HandActor->ChangeHandPhysProperties(false, true);
+	// Returning collision after some time
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_NoCollisionOnDropWait,
+		this,
+		&AVRMotionControllerHand::OnNoCollisionOnDropTimerEnd,
+		NoCollisionOnDropSec,
+		true
+	);
+
+	// TODO Also update IVRPlayerInput interface
+
+	return true;
+}
+
+void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorToAttach, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation)
+{
+	if (!ActorToAttach->Implements<UHandInteractable>())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Trying to attach actor '%s' to hand, but no IHandInteractable interface was found!"), *ActorToAttach->GetName());
+		return;
+	}
+
+	ConnectedActorWithHandInteractableInterface = ActorToAttach;
+
+	if (!HandActor) return;
+
+	auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
+	HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
+	
+	HandActor->ChangeHandPhysProperties(false, true);
+
+	InitialAttachmentTransform = ActorToAttach->GetActorTransform();
+}
+
+void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
+{
+	if (!ConnectedActorWithHandInteractableInterface || !HandActor) return;
+
+	if (CurrentAttachmentLerpValue >= 1.0f) // Finalize attachment
+	{
+		FAttachmentTransformRules AttachmentTransformRules = FAttachmentTransformRules::KeepWorldTransform;
+		AttachmentTransformRules.bWeldSimulatedBodies = true;
+
+		ConnectedActorWithHandInteractableInterface->AttachToActor(HandActor, AttachmentTransformRules);
+
+		IHandInteractable::Execute_OnFinishedAttachingToHand(ConnectedActorWithHandInteractableInterface);
+
+		CurrentAttachmentLerpValue = 0.f;
+		bIsAttachmentIsInTransitionToHand = false;
+		HandActor->ChangeHandPhysProperties(true, true);
+	}
+	else // Keep updating attached actor location so it will be attached later
+	{
+		CurrentAttachmentLerpValue = FMath::Min(1.0f, CurrentAttachmentLerpValue + DeltaTime / AttachmentTimeSec);
+
+		FTransform TargetTransform = HandActor->GetActorAttachmentComponent()->GetComponentTransform();
+		TargetTransform.SetScale3D(InitialAttachmentTransform.GetScale3D());
+
+		TargetTransform.SetLocation(FMath::Lerp(InitialAttachmentTransform.GetLocation(), TargetTransform.GetLocation(), CurrentAttachmentLerpValue));
+		TargetTransform.SetRotation(FMath::Lerp(InitialAttachmentTransform.GetRotation(), TargetTransform.GetRotation(), CurrentAttachmentLerpValue));
+
+		ConnectedActorWithHandInteractableInterface->SetActorTransform(TargetTransform);
+	}
+}
+
+void AVRMotionControllerHand::OnNoCollisionOnDropTimerEnd()
+{
+	// TODO probably additional checks needed
+
+	HandActor->ChangeHandPhysProperties(true, true);
+}
+
+// END Logic Related to interaction with IHandInteractable Objects
