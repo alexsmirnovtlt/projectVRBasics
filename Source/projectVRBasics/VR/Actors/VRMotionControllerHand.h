@@ -31,20 +31,17 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void AttachPhysConstraintToPhantomHand();
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void SweepHandToMotionControllerLocation(bool bSweepFromCamera);
+
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	void TeleportHandToLocation(FVector WorldLocation, FRotator WorldRotation);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	void StartFollowingPhantomHand(bool bReturnHandBackAfterSetup);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	void StartFollowingPhysConstraint(bool TeleportHandToPhantomToSetupConstraint);
+	void StartFollowingPhysConstraint(bool bReturnHandBackAfterSetup);
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
 	void StopFollowingPhysConstraint();
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	class AHandPhysConstraint* GetPhysConstraint();
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Hand Motion Controller")
+	AHandPhysConstraint* GetPhysConstraint();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	void ChangeHandAnimationStateEnum(uint8 byte) const;
 
@@ -63,6 +60,9 @@ public:
 	void HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 protected:
+
+	void AttachPhysConstraintToPhantomHand();
+	void SweepHandToMotionControllerLocation(bool bSweepFromCamera);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	USkeletalMeshComponent* GetPhantomHandSkeletalMesh() const;
@@ -86,7 +86,7 @@ protected:
 	AHandPhysConstraint* PhysConstraint;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
-	bool bHandFollowsController = false; // TODO Check if its even in use anywhere
+	bool bHandFollowsController = false;
 
 	// BEGIN Logic Related to interaction with IHandInteractable Objects
 public:

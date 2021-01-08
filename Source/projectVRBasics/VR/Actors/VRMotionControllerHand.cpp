@@ -27,7 +27,7 @@ void AVRMotionControllerHand::BeginPlay()
 
 	if (!PhysicalHandClass || !PhysicalHandConstraintClass || !GetPhantomHandSkeletalMesh()) return;
 
-	// Waiting to give headset some time to update motion controller location so it wont move to local FVector::ZeroVector on spawn 
+	// Waiting to give headset some time to update motion controller location so it wont move to pawn`s local FVector::ZeroVector on spawn 
 	GetWorld()->GetTimerManager().SetTimer(
 		TimerHandle_BeginPlayWait,
 		this,
@@ -41,6 +41,8 @@ void AVRMotionControllerHand::Destroyed()
 {
 	Super::Destroyed();
 
+	TryToReleaseGrabbedActor();
+
 	if (HandActor)
 	{
 		HandActor->RemoveHandSphereCollisionCallbacks(this);
@@ -49,10 +51,8 @@ void AVRMotionControllerHand::Destroyed()
 
 	if (PhysConstraint) PhysConstraint->Destroy();
 
-	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_BeginPlayWait))
-	{
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
-	}
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_BeginPlayWait)) GetWorld()->GetTimerManager().ClearTimer(TimerHandle_BeginPlayWait);
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_NoCollisionOnDropWait)) GetWorld()->GetTimerManager().ClearTimer(TimerHandle_NoCollisionOnDropWait);
 }
 
 void AVRMotionControllerHand::Tick(float DeltaTime)
@@ -111,6 +111,13 @@ void AVRMotionControllerHand::TeleportHandToLocation(FVector WorldLocation, FRot
 void AVRMotionControllerHand::StartFollowingPhantomHand(bool bReturnHandBackAfterSetup)
 {
 	if (!bPhysConstraintAttachedToPhantomHand) AttachPhysConstraintToPhantomHand();
+	StartFollowingPhysConstraint(bReturnHandBackAfterSetup);
+}
+
+void AVRMotionControllerHand::StartFollowingPhysConstraint(bool bReturnHandBackAfterSetup)
+{
+	if (!HandActor || !PhysConstraint) return;
+	bHandFollowsController = bPhysConstraintAttachedToPhantomHand;
 
 	FTransform CurrentHandTransform = HandActor->GetTransform();
 
@@ -120,34 +127,9 @@ void AVRMotionControllerHand::StartFollowingPhantomHand(bool bReturnHandBackAfte
 	if (bReturnHandBackAfterSetup) HandActor->SetActorTransform(CurrentHandTransform, false, nullptr, ETeleportType::TeleportPhysics);
 }
 
-void AVRMotionControllerHand::StartFollowingPhysConstraint(bool TeleportHandToPhantomToSetupConstraint)
-{
-	if (!HandActor) return;
-
-	// TODO not used yet
-
-	FTransform HandCurrentTransform;
-
-	if (TeleportHandToPhantomToSetupConstraint)
-	{
-		//HandCurrentTransform = HandActor->GetSkeletalHandMeshComponent()->GetComponentTransform();
-		//TeleportHandToMotionControllerLocation(false, false);
-	}
-
-	PhysConstraint->CreateConstraint(HandActor->GetSkeletalHandMeshComponent(), HandActor->GetRootBoneName());
-
-	bPhysConstraintAttachedToPhantomHand = true;
-
-	if (TeleportHandToPhantomToSetupConstraint)
-	{
-		// Returning hand back if needed
-		HandActor->GetSkeletalHandMeshComponent()->SetWorldTransform(HandCurrentTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	}
-}
-
 void AVRMotionControllerHand::StopFollowingPhysConstraint()
 {
-	if (!bPhysConstraintAttachedToPhantomHand) return;
+	if (!bPhysConstraintAttachedToPhantomHand || !PhysConstraint) return;
 	
 	PhysConstraint->BreakConstraint();
 	bPhysConstraintAttachedToPhantomHand = false;
@@ -161,9 +143,9 @@ void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly
 	}
 	else
 	{
-		// TODO Attach constraint back and follow it if not already
-		//StartFollowingPhantomHand(true);
+		if (!bPhysConstraintAttachedToPhantomHand) AttachPhysConstraintToPhantomHand();
 		SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
+		if (!bHandFollowsController) StartFollowingPhantomHand(true);
 	}
 
 	Super::OnPawnTeleport(bStarted, bCameraViewOnly);
@@ -179,8 +161,13 @@ void AVRMotionControllerHand::AttachPhysConstraintToPhantomHand()
 		PhysConstraint->SetInstigator(OwningVRPawn);
 	}
 
+	auto ParentActor = PhysConstraint->GetAttachParentActor();
+	if (ParentActor == nullptr || ParentActor != this)
+	{
+		PhysConstraint->AttachToComponent(MotionController, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	}
+
 	bPhysConstraintAttachedToPhantomHand = true;
-	PhysConstraint->AttachToComponent(MotionController, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 void AVRMotionControllerHand::ChangeHandAnimationStateEnum_Implementation(uint8 byte) const
@@ -206,6 +193,7 @@ FTransform AVRMotionControllerHand::GetPointingWorldTransform_Implementation() c
 
 AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 {
+	bPhysConstraintAttachedToPhantomHand = false; // This function is public so every time some actor want to detach and/or move constraint we consider it detached for logic purposes such as teleport
 	return PhysConstraint;
 }
 
@@ -312,6 +300,7 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 
 void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorToAttach, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation)
 {
+	if (!HandActor) return;
 	if (!ActorToAttach->Implements<UHandInteractable>())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Trying to attach actor '%s' to hand, but no IHandInteractable interface was found!"), *ActorToAttach->GetName());
@@ -319,8 +308,6 @@ void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorT
 	}
 
 	ConnectedActorWithHandInteractableInterface = ActorToAttach;
-
-	if (!HandActor) return;
 
 	auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
 	HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
