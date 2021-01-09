@@ -51,7 +51,7 @@ public:
 	FTransform GetPointingWorldTransform_Implementation() const;
 
 	 // Is hand able to grab or interact with collided actors that implements IHandInteractable
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintPure, Category = "Override")
 	bool IsHandInIdleState() const;
 
 	UFUNCTION()
@@ -90,15 +90,13 @@ protected:
 
 	// BEGIN Logic Related to interaction with IHandInteractable Objects
 public:
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
-	bool IsHandInGrabState() { return bIsGrabbing; }
+
+	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool bIsAttachmentIsInTransitionToHand = false;
 
 protected:
 
-	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	bool bIsGrabbing = false;
-	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
-	bool bIsAttachmentIsInTransitionToHand = false;
 
 	UPROPERTY()
 	FTransform InitialAttachmentTransform;
@@ -112,9 +110,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	AActor* ConnectedActorWithHandInteractableInterface;
-
+	// To pick up objects more accurately we keep array of them and ask them to provide distance to it so closest one will be picked up
 	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
-	TArray<AActor*> OverlappingActorsArray;
+	TArray<AActor*> OverlappingActorsArray; // TODO May need additional testing if all actors are correctly removed from this array
 
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	int32 GetClosestGrabbableActorIndex() const;

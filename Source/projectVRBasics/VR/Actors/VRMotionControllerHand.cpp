@@ -173,11 +173,12 @@ void AVRMotionControllerHand::AttachPhysConstraintToPhantomHand()
 void AVRMotionControllerHand::ChangeHandAnimationStateEnum_Implementation(uint8 byte) const
 {
 	// Left and Right hand animators are different so they will override this function to setup their Animation Blueprint accordingly
+	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function ChangeHandAnimationStateEnum()"), *this->GetClass()->GetFName().ToString());
 }
 
 bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
 {
-	return !bIsGrabbing && Axis_Trigger_Value < 0.5f && Axis_Grip_Value < 0.5f;
+	return !bIsGrabbing;
 }
 
 USkeletalMeshComponent* AVRMotionControllerHand::GetPhantomHandSkeletalMesh_Implementation() const
@@ -200,13 +201,11 @@ AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 void AVRMotionControllerHand::HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor->Implements<UHandInteractable>()) return; // If we just cast OtherActor to IHandInteractable, Implements() will return true and Cast<IHandInteractable>(OtherActor) will return nullptr because we added interface in BP and not in cpp class
-
+	// This and EndOverlap gets triggered a lot more than needed. Consider using custom collision presets with custom object types to reduce unnecessary calls
 	OverlappingActorsArray.Add(OtherActor);
 	IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OtherActor, this, OtherComp);
-	//IHandInteractable::OnCanBeGrabbedByHand_Start(OtherActor, this, OtherComp);
 
-	// TODO this and EndOverlap gets triggered a lot more than needed. Custom Collision presets with custom object types are better suited for that
-	//UE_LOG(LogTemp, Warning, TEXT("BeginOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("BeginOverlap --- OtherActor:%s --- OtherComp:%s"), *OtherActor->GetName(), *OtherComp->GetName());
 }
 
 void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -215,9 +214,8 @@ void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent*
 	
 	OverlappingActorsArray.Remove(OtherActor);
 	IHandInteractable::Execute_OnCanBeGrabbedByHand_End(OtherActor, this, OtherComp);
-	//IHandInteractable::OnCanBeGrabbedByHand_End(OtherActor, this, OtherComp);
 
-	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap %s --- %s"), *OtherActor->GetName(), *OtherComp->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap --- OtherActor:%s --- OtherComp:%s"), *OtherActor->GetName(), *OtherComp->GetName());
 }
 
 // BEGIN Logic Related to interaction with IHandInteractable Objects
@@ -259,6 +257,8 @@ bool AVRMotionControllerHand::TryToGrabActor()
 	int32 ActorIndex = GetClosestGrabbableActorIndex();
 	if (ActorIndex == -1) return false;
 
+	if (!IHandInteractable::Execute_CanBeGrabbed(OverlappingActorsArray[ActorIndex])) return false;
+
 	bIsGrabbing = true;
 	bIsAttachmentIsInTransitionToHand = true;
 
@@ -272,15 +272,30 @@ bool AVRMotionControllerHand::TryToGrabActor()
 
 bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 {
-	if (!bIsGrabbing || !ConnectedActorWithHandInteractableInterface || bIsAttachmentIsInTransitionToHand) return false; // TODO maybe some logic applies here
+	if (bIsAttachmentIsInTransitionToHand) { bIsGrabbing = false; return false; } // Special case when we just grabbed actor that on its way to hand to be attached
+
+	int32 ActorIndex = GetClosestGrabbableActorIndex();
+
+	if (!ConnectedActorWithHandInteractableInterface)
+	{
+		// Case when we pressed grab when nothing was around to grab then moved hand close to grabbable item and reseased grab
+		if (ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
+
+		return false;
+	}
 
 	// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop
 	if (!bForceRelease && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
+
+	if (!IHandInteractable::Execute_CanBeDropped(ConnectedActorWithHandInteractableInterface)) return false;
 
 	bIsGrabbing = false;
 
 	IHandInteractable::Execute_OnDrop(ConnectedActorWithHandInteractableInterface, this);
 	ConnectedActorWithHandInteractableInterface = nullptr;
+
+	// Case when we dropped actor but there is more actors in the vicinity to grab. Notify closest one
+	if (ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
 
 	// Disabling collision while dropping actor so it can drop or be thrown correctly
 	HandActor->ChangeHandPhysProperties(false, true);
@@ -333,6 +348,8 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 		CurrentAttachmentLerpValue = 0.f;
 		bIsAttachmentIsInTransitionToHand = false;
 		HandActor->ChangeHandPhysProperties(true, true);
+
+		if (!bIsGrabbing) TryToReleaseGrabbedActor(true); // If input to drop was executed, drop it now
 	}
 	else // Keep updating attached actor location so it will be attached later
 	{
@@ -344,14 +361,12 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 		TargetTransform.SetLocation(FMath::Lerp(InitialAttachmentTransform.GetLocation(), TargetTransform.GetLocation(), CurrentAttachmentLerpValue));
 		TargetTransform.SetRotation(FMath::Lerp(InitialAttachmentTransform.GetRotation(), TargetTransform.GetRotation(), CurrentAttachmentLerpValue));
 
-		ConnectedActorWithHandInteractableInterface->SetActorTransform(TargetTransform);
+		ConnectedActorWithHandInteractableInterface->SetActorTransform(TargetTransform, false, nullptr, ETeleportType::ResetPhysics);
 	}
 }
 
 void AVRMotionControllerHand::OnNoCollisionOnDropTimerEnd()
 {
-	// TODO probably additional checks needed
-
 	HandActor->ChangeHandPhysProperties(true, true);
 }
 
