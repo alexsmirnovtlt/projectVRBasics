@@ -24,6 +24,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 public:	
 
@@ -55,10 +56,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller")
 	AVirtualRealityPawn* GetVRPawn() const;
 
+	// What location and rotation we need to cast a ray from to determine which IHandInteractable actor are we pointing to. If hand is in Idle state, could be Arrow`s Transform. If we are holding something, might be a different transform
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
+	FTransform GetPointingWorldTransform() const;
+	FTransform GetPointingWorldTransform_Implementation() const;
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup")
 	TSubclassOf<UControllerState> StartStateClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup - Pointing")
+	FName PointingRaycastProfileName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup - Pointing")
+	float PointingMaxDistance;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadonly, Category = "Motion Controller")
 	class UMotionControllerComponent* MotionController;
@@ -75,13 +86,21 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Motion Controller Events")
 	void OnDoneInitByPawn();
 
+	UFUNCTION()
+	virtual AActor* GetActorToForwardInputTo();
+	UFUNCTION()
+	virtual bool CanDoPointingChecks() const { return true; };
+
 	bool IsRightController;
 
 	UPROPERTY()
 	USplineComponent* SplineComponent;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
-	TScriptInterface<IVRPlayerInput> ConnectedActorWithInputInterface;
+	TWeakObjectPtr<AActor> PointedAtActorWithPointableInterface;
+
+	UFUNCTION()
+	void UpdateActorThatItPointsTo();
 
 	// BEGIN Input from Pawn implementation 
 public:

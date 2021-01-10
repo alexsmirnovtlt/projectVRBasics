@@ -14,7 +14,7 @@ enum class EButtonActionType : uint8 {
 	ReleasedTouch = 3 UMETA(DisplayName = "Released Touch")
 };
 
-// This class does not need to be modified.
+
 UINTERFACE(MinimalAPI, Blueprintable)
 class UVRPlayerInput : public UInterface
 {
@@ -51,7 +51,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IVRPlayerInput")
 	void Input_Button_System(EButtonActionType ActionType);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IVRPlayerInput")
 	bool GetShouldConsumeInput() const;
 	bool GetShouldConsumeInput_Implementation() const { return false; };
 };

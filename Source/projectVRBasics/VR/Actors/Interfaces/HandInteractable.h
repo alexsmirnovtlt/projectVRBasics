@@ -34,12 +34,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnCanBeGrabbedByHand_End(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 
-	// When hand`s arrow points at IHandInteractable actor
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandPointing_Start(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
-	void OnHandPointing_End(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent, FVector& HitLocation);
-
 	// When phantom hand (actual motion controller world location that ignores any physics collision) overlaps something
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnPhantomHandEnter(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);

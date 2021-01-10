@@ -187,11 +187,6 @@ USkeletalMeshComponent* AVRMotionControllerHand::GetPhantomHandSkeletalMesh_Impl
 	return nullptr;
 }
 
-FTransform AVRMotionControllerHand::GetPointingWorldTransform_Implementation() const
-{
-	return GetControllerWorldOriginTransform();
-}
-
 AHandPhysConstraint* AVRMotionControllerHand::GetPhysConstraint()
 {
 	bPhysConstraintAttachedToPhantomHand = false; // This function is public so every time some actor want to detach and/or move constraint we consider it detached for logic purposes such as teleport
@@ -216,6 +211,22 @@ void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent*
 	IHandInteractable::Execute_OnCanBeGrabbedByHand_End(OtherActor, this, OtherComp);
 
 	//UE_LOG(LogTemp, Warning, TEXT("EndOverlap --- OtherActor:%s --- OtherComp:%s"), *OtherActor->GetName(), *OtherComp->GetName());
+}
+
+AActor* AVRMotionControllerHand::GetActorToForwardInputTo()
+{
+	// TODO Change so grabbed object can receive input
+
+	return Super::GetActorToForwardInputTo();
+}
+
+bool AVRMotionControllerHand::CanDoPointingChecks() const
+{
+	// When this Actor is created, Tick functions immediately needs PointingTransform that this Actors is not having yet.
+	// And there is some special cases when we dont need ponting checks (f.e when hand is detached)
+	if (!HandActor || bIsAttachmentIsInTransitionToHand || !bPhysConstraintAttachedToPhantomHand) return false;
+
+	return true;
 }
 
 // BEGIN Logic Related to interaction with IHandInteractable Objects

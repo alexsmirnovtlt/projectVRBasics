@@ -45,11 +45,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	void ChangeHandAnimationStateEnum(uint8 byte) const;
 
-	 // What location and rotation we need to cast a ray from to determine which IHandInteractable actor are we pointing to. If hand is in Idle state, could be Arrow`s Transform. If we are holding something, might be a different transform
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
-	FTransform GetPointingWorldTransform() const;
-	FTransform GetPointingWorldTransform_Implementation() const;
-
 	 // Is hand able to grab or interact with collided actors that implements IHandInteractable
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintPure, Category = "Override")
 	bool IsHandInIdleState() const;
@@ -87,6 +82,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Hand Motion Controller")
 	bool bHandFollowsController = false;
+
+	virtual AActor* GetActorToForwardInputTo() override;
+	virtual bool CanDoPointingChecks() const;
 
 	// BEGIN Logic Related to interaction with IHandInteractable Objects
 public:
