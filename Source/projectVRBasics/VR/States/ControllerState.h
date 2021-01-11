@@ -33,6 +33,8 @@ public:
 	UControllerState* GetPairedControllerState();
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
+	void Tick(float DeltaTime);
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
 	void OnStateEnter();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "VR Controller Events")
 	void OnStateExit();

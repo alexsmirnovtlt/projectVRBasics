@@ -37,6 +37,7 @@ void AVirtualRealityMotionController::BeginPlay()
 void AVirtualRealityMotionController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (ControllerState) ControllerState->Tick(DeltaTime);
 
 	UpdateActorThatItPointsTo(); // Doing a Raycast to determine if we have an object we can interact with (f.e forward input to world placed UI or grabbable objects)
 }
@@ -215,6 +216,7 @@ void AVirtualRealityMotionController::UpdateActorThatItPointsTo()
 
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_X(float Value)
 {
+	if (Value == Axis_Thumbstick_X_Value) return; // To reduce calls so 0, 0 and others wont trigger events continiously
 	Axis_Thumbstick_X_Value = Value; // storing value for use in BP
 	
 	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
@@ -232,6 +234,7 @@ void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_X(float Value)
 
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
 {
+	if (Value == Axis_Thumbstick_Y_Value) return;
 	Axis_Thumbstick_Y_Value = Value;
 	
 	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
@@ -249,6 +252,7 @@ void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
 
 void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
 {
+	if (Value == Axis_Trigger_Value) return;
 	Axis_Trigger_Value = Value;
 
 	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
@@ -266,6 +270,7 @@ void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
 
 void AVirtualRealityMotionController::PawnInput_Axis_Grip(float Value)
 {
+	if (Value == Axis_Grip_Value) return;
 	Axis_Grip_Value = Value;
 
 	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();

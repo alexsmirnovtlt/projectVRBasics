@@ -340,7 +340,7 @@ void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorT
 	ConnectedActorWithHandInteractableInterface = ActorToAttach;
 
 	auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
-	HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
+	if(HandAttachmentComponent) HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
 	
 	HandActor->ChangeHandPhysProperties(false, true);
 
