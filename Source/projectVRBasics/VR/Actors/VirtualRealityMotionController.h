@@ -25,6 +25,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void Destroyed() override;
 
 public:	
 
@@ -98,6 +99,8 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
 	TWeakObjectPtr<AActor> PointedAtActorWithPointableInterface;
+	UPROPERTY(BlueprintReadWrite, Category = "Motion Controller")
+	bool bPointedAtActorImplementsInputInterface;// Valid only if PointedAtActorWithPointableInterface implements both interfaces: UVRPlayerInput and UControllerPointable
 
 	UFUNCTION()
 	void UpdateActorThatItPointsTo();

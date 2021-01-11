@@ -22,7 +22,7 @@ class PROJECTVRBASICS_API IControllerPointable
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IControllerPointable")
-	void OnGetPointed(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, UPARAM(ref)FVector& HitLocation);
+	void OnGetPointed(AVirtualRealityMotionController* MotionController, USceneComponent* CollidedComponent, UPARAM(ref)FVector& HitLocation); //TODO UPARAM(ref) makes Warning in BP. Needs to be fixed
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IControllerPointable")
 	void OnEndPointed(AVirtualRealityMotionController* MotionController);
 };

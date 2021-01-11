@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "VirtualRealityMotionController.h"
 
-#include "Interfaces/HandInteractable.h"
-
 #include "VRMotionControllerHand.generated.h"
 
 class AHandActor;
@@ -92,6 +90,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	bool bIsAttachmentIsInTransitionToHand = false;
 
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool TryToGrabActor();
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	bool TryToReleaseGrabbedActor(bool bForceRelease = false);
+
 protected:
 
 	bool bIsGrabbing = false;
@@ -116,16 +119,12 @@ protected:
 	int32 GetClosestGrabbableActorIndex() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
-	bool TryToGrabActor();
-
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	void StartMovingActorToHandForAttachment(AActor* ActorToAttach, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	void UpdateAttachedActorLocation(float DeltaTime);
 
-	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
-	bool TryToReleaseGrabbedActor(bool bForceRelease = false);
+	bool bGrabbedObjectImplementsPlayerInputInterface;
 
 	// END Logic Related to interaction with IHandInteractable Objects
 

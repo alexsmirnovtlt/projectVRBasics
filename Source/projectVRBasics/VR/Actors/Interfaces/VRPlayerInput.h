@@ -14,6 +14,68 @@ enum class EButtonActionType : uint8 {
 	ReleasedTouch = 3 UMETA(DisplayName = "Released Touch")
 };
 
+USTRUCT(BlueprintType)
+struct FConsumeInputParams_Axes
+{
+	GENERATED_BODY()
+
+	FConsumeInputParams_Axes()
+	{
+		Thumbstick = false;
+		Trigger = false;
+		Grip = false;
+	}
+
+	UPROPERTY(EditAnywhere)
+	bool Thumbstick;
+	UPROPERTY(EditAnywhere)
+	bool Trigger;
+	UPROPERTY(EditAnywhere)
+	bool Grip;
+};
+
+USTRUCT(BlueprintType)
+struct FConsumeInputParams_Buttons
+{
+	GENERATED_BODY()
+
+	FConsumeInputParams_Buttons()
+	{
+		Primary = false;
+		Secondary = false;
+		Thumbstick = false;
+		Trigger = false;
+		Grip = false;
+	}
+
+	UPROPERTY(EditAnywhere)
+	bool Primary;
+	UPROPERTY(EditAnywhere)
+	bool Secondary;
+	UPROPERTY(EditAnywhere)
+	bool Thumbstick;
+	UPROPERTY(EditAnywhere)
+	bool Trigger;
+	UPROPERTY(EditAnywhere)
+	bool Grip;
+};
+
+USTRUCT(BlueprintType)
+struct FConsumeInputParams
+{
+	GENERATED_BODY()
+
+	FConsumeInputParams()
+	{
+		Axes = FConsumeInputParams_Axes();
+		Buttons = FConsumeInputParams_Buttons();
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FConsumeInputParams_Axes Axes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FConsumeInputParams_Buttons Buttons;
+};
 
 UINTERFACE(MinimalAPI, Blueprintable)
 class UVRPlayerInput : public UInterface
@@ -52,6 +114,6 @@ public:
 	void Input_Button_System(EButtonActionType ActionType);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IVRPlayerInput")
-	bool GetShouldConsumeInput() const;
-	bool GetShouldConsumeInput_Implementation() const { return false; };
+	FConsumeInputParams GetConsumeInputParams() const;
+	FConsumeInputParams GetConsumeInputParams_Implementation() const { return FConsumeInputParams(); };
 };

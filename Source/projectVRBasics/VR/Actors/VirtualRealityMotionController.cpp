@@ -3,7 +3,6 @@
 
 #include "VirtualRealityMotionController.h"
 
-
 #include "MotionControllerComponent.h"
 #include "UObject/ScriptInterface.h"
 
@@ -11,7 +10,6 @@
 #include "../States/ControllerState.h"
 #include "VirtualRealityPawn.h"
 
-#include "DrawDebugHelpers.h" // REMOVE
 
 AVirtualRealityMotionController::AVirtualRealityMotionController()
 {
@@ -41,6 +39,17 @@ void AVirtualRealityMotionController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	UpdateActorThatItPointsTo(); // Doing a Raycast to determine if we have an object we can interact with (f.e forward input to world placed UI or grabbable objects)
+}
+
+void AVirtualRealityMotionController::Destroyed()
+{
+	Super::Destroyed();
+
+	if (PointedAtActorWithPointableInterface.IsValid()) // TODO Check if that is enough
+	{
+		IControllerPointable::Execute_OnEndPointed(PointedAtActorWithPointableInterface.Get(), this);
+		PointedAtActorWithPointableInterface.Reset();
+	}
 }
 
 void AVirtualRealityMotionController::InitialSetup(AVirtualRealityPawn* PawnOwner, bool IsLeft, bool IsPrimary)
@@ -155,7 +164,7 @@ bool AVirtualRealityMotionController::IsRightHandController()
 
 AActor* AVirtualRealityMotionController::GetActorToForwardInputTo()
 {
-	if (PointedAtActorWithPointableInterface.IsValid()) return PointedAtActorWithPointableInterface.Get();
+	if (bPointedAtActorImplementsInputInterface) return PointedAtActorWithPointableInterface.Get();
 	else return nullptr;
 }
 
@@ -168,19 +177,22 @@ void AVirtualRealityMotionController::UpdateActorThatItPointsTo()
 
 		GetWorld()->LineTraceSingleByProfile(HitResult, GetPointingWorldTransform().GetLocation(), EndTraceLocation, PointingRaycastProfileName);
 
-// TMP REMOVE
-		DrawDebugLine(GetWorld(), GetPointingWorldTransform().GetLocation(), EndTraceLocation, FColor::Red);
-		//if (HitResult.Actor.IsValid()) UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor.Get()->GetName());
-
 		if (HitResult.Actor.IsValid() && HitResult.Actor.Get()->Implements<UControllerPointable>())
 		{
 			// Have A valid Hit
 
 			// Notifying previous actor the we ended pointing at it
 			if (PointedAtActorWithPointableInterface.IsValid() && PointedAtActorWithPointableInterface.Get() != HitResult.Actor.Get())
+			{
 				IControllerPointable::Execute_OnEndPointed(PointedAtActorWithPointableInterface.Get(), this);
+				
+				bPointedAtActorImplementsInputInterface = HitResult.Actor.Get()->Implements<UVRPlayerInput>();
+			}
+
+			if (!PointedAtActorWithPointableInterface.IsValid()) bPointedAtActorImplementsInputInterface = HitResult.Actor.Get()->Implements<UVRPlayerInput>();
 
 			PointedAtActorWithPointableInterface = HitResult.Actor;
+
 			USceneComponent* HitComponent = HitResult.Component.IsValid() ? HitResult.Component.Get() : nullptr;
 
 			IControllerPointable::Execute_OnGetPointed(HitResult.Actor.Get(), this, HitComponent, HitResult.Location);
@@ -204,21 +216,33 @@ void AVirtualRealityMotionController::UpdateActorThatItPointsTo()
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_X(float Value)
 {
 	Axis_Thumbstick_X_Value = Value; // storing value for use in BP
-	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding input to controller state if able
 	
-	//AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
-	//if (ActorToForwardInputTo) IVRPlayerInput::Execute_Input_Axis_Thumbstick(ActorToForwardInputTo, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
-																																		
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Axis_Thumbstick(ActorToForwardInputTo, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding input to some connected actor first 
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if(!ConsumeInputParams.Axes.Thumbstick) if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding input to controller state if input was not consumed by another actor
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // Forwarding input to controller state if ControllerState is valid
+
 	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value); // call to BP event
 }
 
 void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
 {
 	Axis_Thumbstick_Y_Value = Value;
-	if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
 	
-	//AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
-	//if (ActorToForwardInputTo) IVRPlayerInput::Execute_Input_Axis_Thumbstick(ActorToForwardInputTo, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Axis_Thumbstick(ActorToForwardInputTo, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Axes.Thumbstick) if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Axis_Thumbstick(ControllerState, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
 
 	Execute_Input_Axis_Thumbstick(this, Axis_Thumbstick_X_Value, Axis_Thumbstick_Y_Value);
 }
@@ -226,64 +250,120 @@ void AVirtualRealityMotionController::PawnInput_Axis_Thumbstick_Y(float Value)
 void AVirtualRealityMotionController::PawnInput_Axis_Trigger(float Value)
 {
 	Axis_Trigger_Value = Value;
-	if (ControllerState) ControllerState->Execute_Input_Axis_Trigger(ControllerState, Value);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Trigger(ConnectedActorWithInputInterface.GetObject(), Value);
-	Execute_Input_Axis_Trigger(this, Value);
+
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Axis_Trigger(ActorToForwardInputTo, Axis_Trigger_Value);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Axes.Trigger) if (ControllerState) ControllerState->Execute_Input_Axis_Trigger(ControllerState, Axis_Trigger_Value);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Axis_Trigger(ControllerState, Axis_Trigger_Value);
+
+	Execute_Input_Axis_Trigger(this, Axis_Trigger_Value);
 }
 
 void AVirtualRealityMotionController::PawnInput_Axis_Grip(float Value)
 {
 	Axis_Grip_Value = Value;
-	if (ControllerState) ControllerState->Execute_Input_Axis_Grip(ControllerState, Value);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Axis_Grip(ConnectedActorWithInputInterface.GetObject(), Value);
-	Execute_Input_Axis_Grip(this, Value);
+
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Axis_Grip(ActorToForwardInputTo, Axis_Grip_Value);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Axes.Grip) if (ControllerState) ControllerState->Execute_Input_Axis_Grip(ControllerState, Axis_Grip_Value);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Axis_Grip(ControllerState, Axis_Grip_Value);
+
+	Execute_Input_Axis_Grip(this, Axis_Grip_Value);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Primary(EButtonActionType ActionType)
 {
-	if (ControllerState) ControllerState->Execute_Input_Button_Primary(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Primary(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Button_Primary(ActorToForwardInputTo, ActionType);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Buttons.Primary) if (ControllerState) ControllerState->Execute_Input_Button_Primary(ControllerState, ActionType);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Button_Primary(ControllerState, ActionType);
+
 	Execute_Input_Button_Primary(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Secondary(EButtonActionType ActionType)
 {
-	if (ControllerState) ControllerState->Execute_Input_Button_Secondary(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Secondary(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Button_Secondary(ActorToForwardInputTo, ActionType);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Buttons.Secondary) if (ControllerState) ControllerState->Execute_Input_Button_Secondary(ControllerState, ActionType);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Button_Secondary(ControllerState, ActionType);
+
 	Execute_Input_Button_Secondary(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Thumbstick(EButtonActionType ActionType)
 {
-	if (ControllerState) ControllerState->Execute_Input_Button_Thumbstick(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Thumbstick(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Button_Thumbstick(ActorToForwardInputTo, ActionType);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Buttons.Thumbstick) if (ControllerState) ControllerState->Execute_Input_Button_Thumbstick(ControllerState, ActionType);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Button_Thumbstick(ControllerState, ActionType);
+
 	Execute_Input_Button_Thumbstick(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Trigger(EButtonActionType ActionType)
 {
-	if (ControllerState) ControllerState->Execute_Input_Button_Trigger(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Trigger(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Button_Trigger(ActorToForwardInputTo, ActionType);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Buttons.Trigger) if (ControllerState) ControllerState->Execute_Input_Button_Trigger(ControllerState, ActionType);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Button_Trigger(ControllerState, ActionType);
+
 	Execute_Input_Button_Trigger(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Grip(EButtonActionType ActionType)
 {
-	if (ControllerState) ControllerState->Execute_Input_Button_Grip(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Grip(ConnectedActorWithInputInterface.GetObject(), ActionType);
+	AActor* ActorToForwardInputTo = GetActorToForwardInputTo();
+	if (ActorToForwardInputTo)
+	{
+		IVRPlayerInput::Execute_Input_Button_Grip(ActorToForwardInputTo, ActionType);
+
+		FConsumeInputParams ConsumeInputParams = IVRPlayerInput::Execute_GetConsumeInputParams(ActorToForwardInputTo);
+		if (!ConsumeInputParams.Buttons.Grip) if (ControllerState) ControllerState->Execute_Input_Button_Grip(ControllerState, ActionType);
+	}
+	else if (ControllerState) ControllerState->Execute_Input_Button_Grip(ControllerState, ActionType);
+
 	Execute_Input_Button_Grip(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_Menu(EButtonActionType ActionType)
 {
 	if (ControllerState) ControllerState->Execute_Input_Button_Menu(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_Menu(ConnectedActorWithInputInterface.GetObject(), ActionType);
 	Execute_Input_Button_Menu(this, ActionType);
 }
 
 void AVirtualRealityMotionController::PawnInput_Button_System(EButtonActionType ActionType)
 {
 	if (ControllerState) ControllerState->Execute_Input_Button_System(ControllerState, ActionType);
-	//if (ConnectedActorWithInputInterface) ConnectedActorWithInputInterface->Execute_Input_Button_System(ConnectedActorWithInputInterface.GetObject(), ActionType);
 	Execute_Input_Button_System(this, ActionType);
 }

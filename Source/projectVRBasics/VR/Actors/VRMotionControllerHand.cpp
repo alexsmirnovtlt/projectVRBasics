@@ -12,6 +12,9 @@
 #include "VirtualRealityPawn.h"
 #include "HandPhysConstraint.h"
 
+#include "Interfaces/VRPlayerInput.h"
+#include "Interfaces/HandInteractable.h"
+
 
 AVRMotionControllerHand::AVRMotionControllerHand()
 {
@@ -215,9 +218,13 @@ void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent*
 
 AActor* AVRMotionControllerHand::GetActorToForwardInputTo()
 {
-	// TODO Change so grabbed object can receive input
+	AActor* ActorToForwardInputTo = Super::GetActorToForwardInputTo();
+	if (ActorToForwardInputTo == nullptr && bGrabbedObjectImplementsPlayerInputInterface)
+	{
+		return ConnectedActorWithHandInteractableInterface;
+	}
 
-	return Super::GetActorToForwardInputTo();
+	return ActorToForwardInputTo;
 }
 
 bool AVRMotionControllerHand::CanDoPointingChecks() const
@@ -263,7 +270,7 @@ bool AVRMotionControllerHand::TryToGrabActor()
 		return false;
 	}
 
-	if (bIsGrabbing) return false; // TODO maybe some logic applies here
+	if (bIsGrabbing) return false;
 
 	int32 ActorIndex = GetClosestGrabbableActorIndex();
 	if (ActorIndex == -1) return false;
@@ -275,8 +282,6 @@ bool AVRMotionControllerHand::TryToGrabActor()
 
 	ConnectedActorWithHandInteractableInterface = OverlappingActorsArray[ActorIndex];
 	IHandInteractable::Execute_OnGrab(ConnectedActorWithHandInteractableInterface, this);
-
-	// TODO Also update IVRPlayerInput interface
 
 	return true;
 }
@@ -304,6 +309,7 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 
 	IHandInteractable::Execute_OnDrop(ConnectedActorWithHandInteractableInterface, this);
 	ConnectedActorWithHandInteractableInterface = nullptr;
+	bGrabbedObjectImplementsPlayerInputInterface = false;
 
 	// Case when we dropped actor but there is more actors in the vicinity to grab. Notify closest one
 	if (ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
@@ -318,8 +324,6 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 		NoCollisionOnDropSec,
 		true
 	);
-
-	// TODO Also update IVRPlayerInput interface
 
 	return true;
 }
@@ -361,6 +365,7 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 		HandActor->ChangeHandPhysProperties(true, true);
 
 		if (!bIsGrabbing) TryToReleaseGrabbedActor(true); // If input to drop was executed, drop it now
+		else bGrabbedObjectImplementsPlayerInputInterface = ConnectedActorWithHandInteractableInterface->Implements<UVRPlayerInput>(); // Making so grabbed object may use and consume Player Input
 	}
 	else // Keep updating attached actor location so it will be attached later
 	{
