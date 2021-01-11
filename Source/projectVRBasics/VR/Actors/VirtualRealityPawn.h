@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 
+#include "Interfaces/VRPlayerInput.h"
+
 #include "VirtualRealityPawn.generated.h"
 
 class UCameraComponent;
@@ -13,6 +15,8 @@ class UCapsuleComponent;
 class AVirtualRealityMotionController;
 
 struct FStreamableHandle;
+
+DECLARE_DELEGATE_OneParam(InputActionType, EButtonActionType);
 
 USTRUCT(Blueprintable)
 struct FControllerType
@@ -40,6 +44,7 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 public:
 
@@ -51,11 +56,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
 	void TeleportToLocation(FVector NewLocation, FRotator NewRotation); //  used in teleport state when player teleports
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FVector GetCameraRelativeLocation() const;
+	FTransform GetCameraRelativeTransform() const;
 	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FRotator GetCameraRelativeRotation() const;
-	UFUNCTION(BlueprintCallable, Category = "VR Movement")
-	FVector GetCameraWorldLocation() const;
+	FTransform GetCameraWorldTransform() const;
 
 	// bool that can be accessible in Motion Controller BPs
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VR Setup")
@@ -87,8 +90,8 @@ protected:
 
 	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);;
 
-	bool InitHeadset(IXRTrackingSystem& TrackingSystem);
-	void InitMotionControllers(IXRTrackingSystem& TrackingSystem);
+	bool InitHeadset(IXRTrackingSystem* TrackingSystem);
+	void InitMotionControllers(IXRTrackingSystem* TrackingSystem);
 	void CreateMotionController(bool bLeft, UClass* ClassToCreate);
 
 	UFUNCTION(BlueprintCallable, Category = "VR Setup")
@@ -109,4 +112,96 @@ private:
 
 	TSharedPtr<FStreamableHandle> LeftHandStreamableHandle;
 	TSharedPtr<FStreamableHandle> RightHandStreamableHandle;
+
+	// Input bindings
+	// Binding Input one time so controller states and objects that were grabbed by hand should not receive any input themselves and just implement IVRPlayerInputInterface BP events.
+	// Input gets received by a Pawn, then Pawn calls Interface functions on Virtual Reality Motion Controller class. Then VRMotionController may forward them to states and grabbed objects.
+
+	// Downside of this implementation is there is a lot of boilerplate code
+	// But upsides are:
+	// - Only 10 nodes in BPs: 3 axies and 7 button actions (because left hand state has no need to know about right hand input and so on). Full controll on what button was pressed/touched/released
+	// - Changing ue4 Input Settings will not affect any BPs
+	// - Custom thresholds for Touch and Press Events (currently for Trigger and Grip buttons)
+	// As the result ue4 input is completely detached from any logic in BP regarding input
+
+	protected:
+		static const FName InputBindingName_Axis_Right_Thumbstick_X;
+		static const FName InputBindingName_Axis_Right_Thumbstick_Y;
+		static const FName InputBindingName_Axis_Left_Thumbstick_X;
+		static const FName InputBindingName_Axis_Left_Thumbstick_Y;
+		static const FName InputBindingName_Axis_Right_Trigger;
+		static const FName InputBindingName_Axis_Left_Trigger;
+		static const FName InputBindingName_Axis_Right_Grip;
+		static const FName InputBindingName_Axis_Left_Grip;
+
+		static const FName InputBindingName_Button_Action_Button_Left_Primary_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Secondary_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Primary_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Secondary_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Primary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Secondary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Primary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Secondary_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Trigger_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Trigger_Touch;
+		//static const FName InputBindingName_Button_Action_Button_Right_Trigger_Press;
+		//static const FName InputBindingName_Button_Action_Button_Left_Trigger_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Grip_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Grip_Touch;
+		//static const FName InputBindingName_Button_Action_Button_Right_Grip_Press;
+		//static const FName InputBindingName_Button_Action_Button_Left_Grip_Press;
+		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Touch;
+		static const FName InputBindingName_Button_Action_Button_Left_Thumbstick_Touch;
+		static const FName InputBindingName_Button_Action_Button_Right_Thumbstick_Press;
+		static const FName InputBindingName_Button_Action_Button_Left_Thumbstick_Press;
+		static const FName InputBindingName_Button_Action_Button_Menu;
+		static const FName InputBindingName_Button_Action_Button_System;
+
+		UFUNCTION() void Input_Axis_Right_Thumbstick_X(float Value);
+		UFUNCTION() void Input_Axis_Right_Thumbstick_Y(float Value);
+		UFUNCTION() void Input_Axis_Left_Thumbstick_X(float Value);
+		UFUNCTION() void Input_Axis_Left_Thumbstick_Y(float Value);
+		UFUNCTION() void Input_Axis_Right_Trigger(float Value);
+		UFUNCTION() void Input_Axis_Left_Trigger(float Value);
+		UFUNCTION() void Input_Axis_Right_Grip(float Value);
+		UFUNCTION() void Input_Axis_Left_Grip(float Value);
+
+		UFUNCTION() void Input_Button_Left_Primary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Secondary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Primary(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Secondary(EButtonActionType EventType);
+
+		UFUNCTION() void Input_Button_Right_Trigger_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Trigger_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Grip_Touch(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Left_Grip_Touch(EButtonActionType EventType);
+
+		UFUNCTION() void Input_Button_Left_Thumbstick(EButtonActionType EventType);
+		UFUNCTION() void Input_Button_Right_Thumbstick(EButtonActionType EventType);
+
+		UFUNCTION() void Input_Button_Menu(EButtonActionType EventType); // these and System_Press are not working for Oculus Rift S. Looks like steam VR and Oculus Home consumes those inputs. Maybe?
+		UFUNCTION() void Input_Button_System(EButtonActionType EventType);
+
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		bool bIsTriggerCapacitive = true; // TODO make false and create custom settings for every headset. Maybe move this to controller class
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		bool bIsGripCapacitive = false;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup", meta = (EditCondition = "!bIsTriggerCapacitive"))
+		float AxisTriggerTouchThreshold = 0.0001f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup", meta = (EditCondition = "!bIsGripCapacitive"))
+		float AxisGripTouchThreshold = 0.01f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		float AxisTriggerPressThreshold = 0.95f;
+		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "VR Input Setup")
+		float AxisGripPressThreshold = 0.95f;
+	private:
+		bool bRightTriggerPressed = false;
+		bool bRightTriggerTouched = false;
+		bool bRightGripPressed = false;
+		bool bRightGripTouched = false;
+
+		bool bLeftTriggerPressed = false;
+		bool bLeftTriggerTouched = false;
+		bool bLeftGripPressed = false;
+		bool bLeftGripTouched = false;
 };
