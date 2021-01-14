@@ -15,7 +15,7 @@ AVirtualRealityMotionController::AVirtualRealityMotionController()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	PointingRaycastProfileName = TEXT("BlockAll"); // TODO Check if may be changed to get less calls
+	PointingRaycastProfileName = TEXT("BlockAll");
 	PointingMaxDistance = 1000.f;
 
 	auto NewRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
@@ -176,9 +176,8 @@ void AVirtualRealityMotionController::UpdateActorThatItPointsTo()
 		FHitResult HitResult;
 		FVector EndTraceLocation = GetPointingWorldTransform().GetLocation() + GetPointingWorldTransform().GetRotation().Vector() * PointingMaxDistance;
 
-		GetWorld()->LineTraceSingleByProfile(HitResult, GetPointingWorldTransform().GetLocation(), EndTraceLocation, PointingRaycastProfileName);
-
-		if (HitResult.Actor.IsValid() && HitResult.Actor.Get()->Implements<UControllerPointable>())
+		bool TraceHit = GetWorld()->LineTraceSingleByProfile(HitResult, GetPointingWorldTransform().GetLocation(), EndTraceLocation, PointingRaycastProfileName);
+		if (TraceHit && HitResult.Actor.IsValid() && HitResult.Actor.Get()->Implements<UControllerPointable>())
 		{
 			// Have A valid Hit
 
