@@ -42,8 +42,6 @@ void AHandActor::BeginPlay()
 	if (auto CollisionSphere = GetCollisionSphereComponent())
 	{
 		CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		CollisionSphere->SetGenerateOverlapEvents(true);
-
 		if (OverlapSpherePresetName.IsNone())
 		{
 			CollisionSphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
@@ -51,6 +49,8 @@ void AHandActor::BeginPlay()
 			CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 		}
 		else CollisionSphere->SetCollisionProfileName(OverlapSpherePresetName);
+
+		ChangeHandGrabSpherePhysProperties(true);
 	}
 }
 
@@ -89,6 +89,13 @@ void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulateP
 		}
 		else HandMesh->SetCollisionProfileName(NoCollisionPresetName);
 	}
+
+	ChangeHandGrabSpherePhysProperties(bEnableCollision);
+}
+
+void AHandActor::ChangeHandGrabSpherePhysProperties(bool bEnableCollision)
+{
+	if (auto CollisionSphere = GetCollisionSphereComponent()) CollisionSphere->SetGenerateOverlapEvents(bEnableCollision);
 }
 
 void AHandActor::RefreshWeldedBoneDriver()

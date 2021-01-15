@@ -64,12 +64,12 @@ public:
 	bool IsRequiresSecondButtonPressToDrop() const; 
 	bool IsRequiresSecondButtonPressToDrop_Implementation() const { return false; };
 
-	// Can be set manually to false for some transitions or when this Actor is not ready to be grabbed
+	// Can be set manually to true for some transitions or when this Actor is not ready to be grabbed
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
-	bool CanBeGrabbed() const;
-	bool CanBeGrabbed_Implementation() const { return true; };
-	// Can be set manually to false for some transitions or when this Actor is not ready to be grabbed
+	bool IsGrabDisabled() const;
+	bool IsGrabDisabled_Implementation() const { return false; };
+	// Can be set manually to true for some transitions or when this Actor is not ready to be grabbed
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
-	bool CanBeDropped() const;
-	bool CanBeDropped_Implementation() const { return true; };
+	bool IsDropDisabled() const;
+	bool IsDropDisabled_Implementation() const { return false; };
 };

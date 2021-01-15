@@ -135,6 +135,8 @@ void AVRMotionControllerHand::StopFollowingPhysConstraint()
 	if (!bPhysConstraintAttachedToPhantomHand || !PhysConstraint) return;
 	
 	PhysConstraint->BreakConstraint();
+
+	bHandFollowsController = false;
 	bPhysConstraintAttachedToPhantomHand = false;
 }
 
@@ -275,10 +277,9 @@ bool AVRMotionControllerHand::TryToGrabActor()
 	int32 ActorIndex = GetClosestGrabbableActorIndex();
 	if (ActorIndex == -1) return false;
 
-	if (!IHandInteractable::Execute_CanBeGrabbed(OverlappingActorsArray[ActorIndex])) return false;
+	if (IHandInteractable::Execute_IsGrabDisabled(OverlappingActorsArray[ActorIndex])) return false;
 
 	bIsGrabbing = true;
-	bIsAttachmentIsInTransitionToHand = true;
 
 	ConnectedActorWithHandInteractableInterface = OverlappingActorsArray[ActorIndex];
 	IHandInteractable::Execute_OnGrab(ConnectedActorWithHandInteractableInterface, this);
@@ -303,7 +304,7 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 	// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop
 	if (!bForceRelease && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
 
-	if (!IHandInteractable::Execute_CanBeDropped(ConnectedActorWithHandInteractableInterface)) return false;
+	if (IHandInteractable::Execute_IsDropDisabled(ConnectedActorWithHandInteractableInterface)) return false;
 
 	bIsGrabbing = false;
 
@@ -337,7 +338,8 @@ void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorT
 		return;
 	}
 
-	ConnectedActorWithHandInteractableInterface = ActorToAttach;
+	bIsAttachmentIsInTransitionToHand = true;
+	//ConnectedActorWithHandInteractableInterface = ActorToAttach; // TODO we clearly set up this variable already in TryToGrabActor, remove here?
 
 	auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
 	if(HandAttachmentComponent) HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
