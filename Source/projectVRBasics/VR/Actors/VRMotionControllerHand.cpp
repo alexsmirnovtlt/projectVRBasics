@@ -364,6 +364,7 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 		bIsAttachmentIsInTransitionToHand = false;
 		HandActor->ChangeHandPhysProperties(true, true);
 
+		// TODO FIX NEEDED. If object needs to be grabbed twice, it drops here, if TryToReleaseGrabbedActor(true) its bugged
 		if (!bIsGrabbing) TryToReleaseGrabbedActor(true); // If input to drop was executed, drop it now
 		else bGrabbedObjectImplementsPlayerInputInterface = ConnectedActorWithHandInteractableInterface->Implements<UVRPlayerInput>(); // Making so grabbed object may use and consume Player Input
 	}
