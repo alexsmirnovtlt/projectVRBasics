@@ -29,8 +29,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	void ChangeHandPhysProperties(bool bEnableCollision, bool bSimulatePhysics);
 	UFUNCTION(BlueprintCallable, Category = "VR Hand")
-	void ChangeHandGrabSpherePhysProperties(bool bEnableCollision);
-	UFUNCTION(BlueprintCallable, Category = "VR Hand")
 	void RefreshWeldedBoneDriver();
 
 	UFUNCTION()

@@ -37,7 +37,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Motion Controller Setup")
 	void ChangeToDefaultState(bool NotifyPairedControllerIfAble = true);
 
-	// Where is location and rotation of point in space from where we can cast rays or draw splines to perform various checks (where teleport to or at what actor contoller are we pointing)
+	// Location and Rotation of point in space from where we cast rays or draw splines to perform various checks (where teleport to or at what actor contoller are we pointing)
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Motion Controller")
 	FTransform GetControllerWorldOriginTransform() const;
 	virtual FTransform GetControllerWorldOriginTransform_Implementation() const;

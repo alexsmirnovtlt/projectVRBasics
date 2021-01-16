@@ -13,7 +13,7 @@ class UHandInteractable : public UInterface
 };
 
 /**
- * Implements functionality related to interaction with VR controller
+ * Implements functionality related to interaction with VR controller as a Hand (ability to Grab and Drop)
  */
 class PROJECTVRBASICS_API IHandInteractable
 {
@@ -53,6 +53,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandTeleported(AVRMotionControllerHand* HandMotionController);
+
+	// Tick that gets called every frame by Player if he grabbed this actor
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnHandTick(AVRMotionControllerHand* HandMotionController);
 
 	// When player tries to grab but overlaps multiple IHandInteractable actors, the one with the lowest distance will be chosen
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")

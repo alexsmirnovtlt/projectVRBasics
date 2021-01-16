@@ -90,8 +90,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	bool bIsAttachmentIsInTransitionToHand = false;
 
+	// Trying to find closest overlapping actor that implements IHandInteractable and Grab it
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	bool TryToGrabActor();
+	// Drop actor if hand is currently holding one. bForceRelease::True will drop regardless of IHandInteractable values IsRequiresSecondButtonPressToDrop() or IsDropDisabled(). So True should be used only if those were overridden
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	bool TryToReleaseGrabbedActor(bool bForceRelease = false);
 

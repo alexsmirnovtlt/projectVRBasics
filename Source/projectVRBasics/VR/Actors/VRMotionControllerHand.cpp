@@ -11,6 +11,7 @@
 #include "HandActor.h"
 #include "VirtualRealityPawn.h"
 #include "HandPhysConstraint.h"
+#include "Math/NumericLimits.h"
 
 #include "Interfaces/VRPlayerInput.h"
 #include "Interfaces/HandInteractable.h"
@@ -63,6 +64,7 @@ void AVRMotionControllerHand::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (bIsAttachmentIsInTransitionToHand) UpdateAttachedActorLocation(DeltaTime); // If we grabbed something, updating its location here until it reaches its destination
+	else if (ConnectedActorWithHandInteractableInterface) IHandInteractable::Execute_OnHandTick(ConnectedActorWithHandInteractableInterface, this);
 }
 
 void AVRMotionControllerHand::OnBeginPlayWaitEnd()
@@ -82,13 +84,13 @@ void AVRMotionControllerHand::OnBeginPlayWaitEnd()
 
 	HandActor->SetupHandSphereCollisionCallbacks(this);
 
-	HandActor->ChangeHandPhysProperties(false, true);
+	HandActor->ChangeHandPhysProperties(false, true); // Attaching constraint without simulated physics will result in a warning, so setting hand`s SimulatePhysycs:true
 	StartFollowingPhantomHand(false);
 
 	HandActor->ChangeHandPhysProperties(true, true); // Enabling physics and collision and sweeping from camera to Motion Controller location
 	SweepHandToMotionControllerLocation(true);
 
-	HandActor->RefreshWeldedBoneDriver(); // TODO Setup was already done in BeginPlay() of HandActor and now we must reinit or it wont update properly for some reason 
+	HandActor->RefreshWeldedBoneDriver(); // TODO maybe this should be setup in a different place and RefreshWeldedBoneDriver() should be private
 
 	OnPhysicalHandAppearedEvent(); // Hand is placed in the world. BP may add some logic here
 }
@@ -122,7 +124,8 @@ void AVRMotionControllerHand::StartFollowingPhysConstraint(bool bReturnHandBackA
 	if (!HandActor || !PhysConstraint) return;
 	bHandFollowsController = bPhysConstraintAttachedToPhantomHand;
 
-	FTransform CurrentHandTransform = HandActor->GetTransform();
+	FTransform CurrentHandTransform;
+	if (bReturnHandBackAfterSetup) CurrentHandTransform = HandActor->GetTransform();
 
 	HandActor->SetActorTransform(GetPhantomHandSkeletalMesh()->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
 	PhysConstraint->CreateConstraint(HandActor->GetSkeletalHandMeshComponent(), HandActor->GetRootBoneName());
@@ -144,12 +147,14 @@ void AVRMotionControllerHand::OnPawnTeleport(bool bStarted, bool bCameraViewOnly
 {
 	if (bStarted)
 	{
+		// Notifying currenly grabbed object that we a started teleporting away (or just rotating camera)
 		if(ConnectedActorWithHandInteractableInterface) IHandInteractable::Execute_OnHandTeleported(ConnectedActorWithHandInteractableInterface, this);
 	}
 	else
 	{
+		// Hand and Phys constraint location could have been changed from other actors so we need to make sure that our Hand is back with us and follows Phantom Hand
 		if (!bPhysConstraintAttachedToPhantomHand) AttachPhysConstraintToPhantomHand();
-		SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand by sweeping from camera
+		SweepHandToMotionControllerLocation(true); // After pawn teleported, teleport hand to current Motion Controller (Phantom Hand) location by sweeping from camera
 		if (!bHandFollowsController) StartFollowingPhantomHand(true);
 	}
 
@@ -221,7 +226,7 @@ void AVRMotionControllerHand::HandCollisionSphereEndOverlap(UPrimitiveComponent*
 AActor* AVRMotionControllerHand::GetActorToForwardInputTo()
 {
 	AActor* ActorToForwardInputTo = Super::GetActorToForwardInputTo();
-	if (ActorToForwardInputTo == nullptr && bGrabbedObjectImplementsPlayerInputInterface)
+	if (ActorToForwardInputTo == nullptr && bGrabbedObjectImplementsPlayerInputInterface && !bIsAttachmentIsInTransitionToHand)
 	{
 		return ConnectedActorWithHandInteractableInterface;
 	}
@@ -243,15 +248,15 @@ bool AVRMotionControllerHand::CanDoPointingChecks() const
 int32 AVRMotionControllerHand::GetClosestGrabbableActorIndex() const
 {
 	if (OverlappingActorsArray.Num() == 0) return -1;
-	else if (OverlappingActorsArray.Num() == 1) return 0;
 
-	int32 IndexToReturn = 0;
-	float CurrentDistance = IHandInteractable::Execute_GetWorldSquaredDistanceToMotionController(OverlappingActorsArray[0], this);
+	int32 IndexToReturn = -1;
+	TNumericLimits<float> TNumericLimitsFloat = TNumericLimits<float>();
+	float CurrentDistance = TNumericLimitsFloat.Max();
 
-	for (int32 i = 1; i < OverlappingActorsArray.Num(); ++i)
+	for (int32 i = 0; i < OverlappingActorsArray.Num(); ++i)
 	{
 		float Distance = IHandInteractable::Execute_GetWorldSquaredDistanceToMotionController(OverlappingActorsArray[i], this);
-		if (Distance < CurrentDistance)
+		if (Distance < CurrentDistance && !IHandInteractable::Execute_IsGrabDisabled(OverlappingActorsArray[i]))
 		{
 			IndexToReturn = i;
 			CurrentDistance = Distance;
@@ -264,47 +269,38 @@ int32 AVRMotionControllerHand::GetClosestGrabbableActorIndex() const
 bool AVRMotionControllerHand::TryToGrabActor()
 {
 	if (bIsAttachmentIsInTransitionToHand) return false;
-
-	// Check if we have grabbed object already and it drops on second Grab Event, so drop it instead of grab
-	if (bIsGrabbing && ConnectedActorWithHandInteractableInterface && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface))
+	if (bIsGrabbing)
 	{
-		TryToReleaseGrabbedActor(true);
+		// Check if we have grabbed object already and it drops on second Grab Event, so drop it instead of grab
+		if (ConnectedActorWithHandInteractableInterface && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface))
+			TryToReleaseGrabbedActor(true); 
 		return false;
 	}
 
-	if (bIsGrabbing) return false;
-
-	int32 ActorIndex = GetClosestGrabbableActorIndex();
+	int32 ActorIndex = GetClosestGrabbableActorIndex(); // How close actor is to this hand is decided by grabbable actors themselves by overriding IHandInteractable::GetWorldSquaredDistanceToMotionController() 
 	if (ActorIndex == -1) return false;
-
-	if (IHandInteractable::Execute_IsGrabDisabled(OverlappingActorsArray[ActorIndex])) return false;
 
 	bIsGrabbing = true;
 
 	ConnectedActorWithHandInteractableInterface = OverlappingActorsArray[ActorIndex];
 	IHandInteractable::Execute_OnGrab(ConnectedActorWithHandInteractableInterface, this);
 
+	bGrabbedObjectImplementsPlayerInputInterface = ConnectedActorWithHandInteractableInterface->Implements<UVRPlayerInput>(); // Making so grabbed object may use and consume Player Input
+
 	return true;
 }
 
 bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 {
+	if (!ConnectedActorWithHandInteractableInterface) return false;
 	if (bIsAttachmentIsInTransitionToHand) { bIsGrabbing = false; return false; } // Special case when we just grabbed actor that on its way to hand to be attached
 
-	int32 ActorIndex = GetClosestGrabbableActorIndex();
-
-	if (!ConnectedActorWithHandInteractableInterface)
+	if (!bForceRelease)
 	{
-		// Case when we pressed grab when nothing was around to grab then moved hand close to grabbable item and reseased grab
-		if (ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
-
-		return false;
+		// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop (bForceRelease:true will always drop)
+		if(IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
+		else if (IHandInteractable::Execute_IsDropDisabled(ConnectedActorWithHandInteractableInterface)) return false;
 	}
-
-	// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop
-	if (!bForceRelease && IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
-
-	if (IHandInteractable::Execute_IsDropDisabled(ConnectedActorWithHandInteractableInterface)) return false;
 
 	bIsGrabbing = false;
 
@@ -312,12 +308,10 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 	ConnectedActorWithHandInteractableInterface = nullptr;
 	bGrabbedObjectImplementsPlayerInputInterface = false;
 
-	// Case when we dropped actor but there is more actors in the vicinity to grab. Notify closest one
-	if (ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
-
 	// Disabling collision while dropping actor so it can drop or be thrown correctly
 	HandActor->ChangeHandPhysProperties(false, true);
 	// Returning collision after some time
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_NoCollisionOnDropWait)) GetWorld()->GetTimerManager().ClearTimer(TimerHandle_NoCollisionOnDropWait); // TODO This line might not be needed at all
 	GetWorld()->GetTimerManager().SetTimer(
 		TimerHandle_NoCollisionOnDropWait,
 		this,
@@ -368,7 +362,6 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 
 		// TODO FIX NEEDED. If object needs to be grabbed twice, it drops here, if TryToReleaseGrabbedActor(true) its bugged
 		if (!bIsGrabbing) TryToReleaseGrabbedActor(true); // If input to drop was executed, drop it now
-		else bGrabbedObjectImplementsPlayerInputInterface = ConnectedActorWithHandInteractableInterface->Implements<UVRPlayerInput>(); // Making so grabbed object may use and consume Player Input
 	}
 	else // Keep updating attached actor location so it will be attached later
 	{
@@ -386,7 +379,14 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 
 void AVRMotionControllerHand::OnNoCollisionOnDropTimerEnd()
 {
+	if (bIsAttachmentIsInTransitionToHand || bIsGrabbing) return;
+
 	HandActor->ChangeHandPhysProperties(true, true);
+
+	// TODO Following code must be checked in game
+	int32 ActorIndex = GetClosestGrabbableActorIndex();
+	// TODO *Comment should be changed here.* Case when we pressed grab when nothing was around to grab then moved hand close to grabbable item and reseased grab
+	if (!ConnectedActorWithHandInteractableInterface && ActorIndex != -1) IHandInteractable::Execute_OnCanBeGrabbedByHand_Start(OverlappingActorsArray[ActorIndex], this, nullptr);
 }
 
 // END Logic Related to interaction with IHandInteractable Objects

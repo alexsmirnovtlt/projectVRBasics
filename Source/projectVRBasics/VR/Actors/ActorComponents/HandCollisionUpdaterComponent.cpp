@@ -20,10 +20,10 @@ void UHandCollisionUpdaterComponent::TickComponent(float DeltaTime, enum ELevelT
 	UpdateWeldedBoneDriver();
 }
 
-void UHandCollisionUpdaterComponent::SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh)
+void UHandCollisionUpdaterComponent::SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh, bool bSkipInit)
 {
 	SkeletalHandMesh = SkeletalMesh;
-	SetupWeldedBoneDriver_Implementation(false);
+	if(!bSkipInit) SetupWeldedBoneDriver_Implementation(false);
 }
 
 void UHandCollisionUpdaterComponent::RefreshWeldedBoneDriver()
