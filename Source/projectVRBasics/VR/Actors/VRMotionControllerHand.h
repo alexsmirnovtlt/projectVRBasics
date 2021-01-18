@@ -46,6 +46,9 @@ public:
 	 // Is hand able to grab or interact with collided actors that implements IHandInteractable
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintPure, Category = "Override")
 	bool IsHandInIdleState() const;
+	// World Location of Phantom Hand or Motion Controller itself (if was not overridden)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintPure, Category = "Override")
+	FTransform GetPhantomHandWorldTransform() const; // TODO actually GetControllerWorldOriginTransform() is kind of the same but this was made especially to the location that not realated to the hand itself, but the controller.
 
 	UFUNCTION()
 	void HandCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

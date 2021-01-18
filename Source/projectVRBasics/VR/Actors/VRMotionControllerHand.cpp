@@ -191,6 +191,11 @@ bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
 	return !bIsGrabbing;
 }
 
+FTransform AVRMotionControllerHand::GetPhantomHandWorldTransform_Implementation() const
+{
+	return MotionController->GetComponentTransform();
+}
+
 USkeletalMeshComponent* AVRMotionControllerHand::GetPhantomHandSkeletalMesh_Implementation() const
 {
 	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function GetPhantomHandSkeletalMesh()"), *this->GetClass()->GetFName().ToString());
