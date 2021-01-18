@@ -13,7 +13,7 @@ class UHandInteractable : public UInterface
 };
 
 /**
- * Implements functionality related to interaction with VR controller
+ * Implements functionality related to interaction with VR controller as a Hand (ability to Grab and Drop)
  */
 class PROJECTVRBASICS_API IHandInteractable
 {
@@ -21,10 +21,10 @@ class PROJECTVRBASICS_API IHandInteractable
 
 public:
 
-	// When physical hand overlaps with something, it tries to cast to to this interface and executes OnHandEnter
+	// When physical hand overlaps with something, it tries to cast to to this interface and executes OnHandEnter. CollidedComponent may be NULL !
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandEnter(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
-	// When physical hand leaves overlapped area
+	// When physical hand leaves overlapped area. CollidedComponent may be NULL !
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandExit(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	
@@ -54,6 +54,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandTeleported(AVRMotionControllerHand* HandMotionController);
 
+	// Tick that gets called every frame by Player if he grabbed this actor
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
+	void OnHandTick(AVRMotionControllerHand* HandMotionController);
+
 	// When player tries to grab but overlaps multiple IHandInteractable actors, the one with the lowest distance will be chosen
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
 	float GetWorldSquaredDistanceToMotionController(const AVRMotionControllerHand* HandMotionController) const;
@@ -64,12 +68,12 @@ public:
 	bool IsRequiresSecondButtonPressToDrop() const; 
 	bool IsRequiresSecondButtonPressToDrop_Implementation() const { return false; };
 
-	// Can be set manually to false for some transitions or when this Actor is not ready to be grabbed
+	// Can be set manually to true for some transitions or when this Actor is not ready to be grabbed
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
-	bool CanBeGrabbed() const;
-	bool CanBeGrabbed_Implementation() const { return true; };
-	// Can be set manually to false for some transitions or when this Actor is not ready to be grabbed
+	bool IsGrabDisabled() const;
+	bool IsGrabDisabled_Implementation() const { return false; };
+	// Can be set manually to true for some transitions or when this Actor is not ready to be grabbed
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IHandInteractable")
-	bool CanBeDropped() const;
-	bool CanBeDropped_Implementation() const { return true; };
+	bool IsDropDisabled() const;
+	bool IsDropDisabled_Implementation() const { return false; };
 };

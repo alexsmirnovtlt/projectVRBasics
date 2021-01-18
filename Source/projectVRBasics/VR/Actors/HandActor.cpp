@@ -34,16 +34,12 @@ void AHandActor::BeginPlay()
 
 	HandMesh->SetUseCCD(true);
 
-	ChangeHandPhysProperties(false, false); // Before we setup our phys costraint hand should not collide with anything
-	
-	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
+	HandCollisionUpdaterComponent->SetupWeldedBoneDriver(HandMesh, true); // This component updates PhysicsAsset shapes with current bone locations every frame so animation changes affect hand collisions too
 
 	// Setting Collision to hand sphere so it should only create overlap events only with components that need to interact with that sphere to get some sort of control over hand (grabbable object)
 	if (auto CollisionSphere = GetCollisionSphereComponent())
 	{
 		CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		CollisionSphere->SetGenerateOverlapEvents(true);
-
 		if (OverlapSpherePresetName.IsNone())
 		{
 			CollisionSphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
@@ -52,6 +48,8 @@ void AHandActor::BeginPlay()
 		}
 		else CollisionSphere->SetCollisionProfileName(OverlapSpherePresetName);
 	}
+
+	ChangeHandPhysProperties(false, false); // Before we setup our phys costraint hand should not collide with anything
 }
 
 void AHandActor::SetupHandSphereCollisionCallbacks(AVRMotionControllerHand* VRMotionController)
@@ -77,8 +75,6 @@ void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulateP
 	auto HandMesh = GetSkeletalHandMeshComponent();
 	if (!HandMesh) return;
 
-	HandMesh->SetSimulatePhysics(bSimulatePhysics);
-
 	if(bEnableCollision) HandMesh->SetCollisionProfileName(ActiveCollisionPresetName);
 	else
 	{
@@ -89,6 +85,10 @@ void AHandActor::ChangeHandPhysProperties(bool bEnableCollision, bool bSimulateP
 		}
 		else HandMesh->SetCollisionProfileName(NoCollisionPresetName);
 	}
+
+	HandMesh->SetSimulatePhysics(bSimulatePhysics);
+
+	if (auto CollisionSphere = GetCollisionSphereComponent()) CollisionSphere->SetGenerateOverlapEvents(bEnableCollision);
 }
 
 void AHandActor::RefreshWeldedBoneDriver()

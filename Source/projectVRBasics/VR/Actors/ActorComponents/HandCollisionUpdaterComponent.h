@@ -45,7 +45,7 @@ public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
-	void SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh);
+	void SetupWeldedBoneDriver(USkeletalMeshComponent* SkeletalMesh, bool bSkipInit = false);
 	UFUNCTION(BlueprintCallable, Category = PhysicalAnimation)
 	void RefreshWeldedBoneDriver();
 
