@@ -21,10 +21,10 @@ class PROJECTVRBASICS_API IHandInteractable
 
 public:
 
-	// When physical hand overlaps with something, it tries to cast to to this interface and executes OnHandEnter
+	// When physical hand overlaps with something, it tries to cast to to this interface and executes OnHandEnter. CollidedComponent may be NULL !
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandEnter(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
-	// When physical hand leaves overlapped area
+	// When physical hand leaves overlapped area. CollidedComponent may be NULL !
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "IHandInteractable")
 	void OnHandExit(AVRMotionControllerHand* HandMotionController, USceneComponent* CollidedComponent);
 	

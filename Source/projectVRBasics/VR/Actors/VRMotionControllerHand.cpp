@@ -303,6 +303,7 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 	}
 
 	bIsGrabbing = false;
+	if (OverlappingActorsArray.Contains(ConnectedActorWithHandInteractableInterface)) OverlappingActorsArray.Remove(ConnectedActorWithHandInteractableInterface); // TODO Check if this is applicable in every possible situation or it should be done with some sort of check 
 
 	IHandInteractable::Execute_OnDrop(ConnectedActorWithHandInteractableInterface, this);
 	ConnectedActorWithHandInteractableInterface = nullptr;
