@@ -45,13 +45,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	USceneComponent* GetActorAttachmentComponent() const;
 
-	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "VR Hand")
 	FName& GetRootBoneName();
-	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "VR Hand")
 	FName& GetPalmSocketName();
-	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "VR Hand")
 	FName& GetActiveCollisionPresetName();
-	UFUNCTION(BlueprintCallable, Category = "VR Hand")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "VR Hand")
 	FName& GeNoCollisionPresetName();
 
 protected:

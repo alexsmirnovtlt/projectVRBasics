@@ -308,7 +308,7 @@ bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 	}
 
 	bIsGrabbing = false;
-	if (OverlappingActorsArray.Contains(ConnectedActorWithHandInteractableInterface)) OverlappingActorsArray.Remove(ConnectedActorWithHandInteractableInterface); // TODO Check if this is applicable in every possible situation or it should be done with some sort of check 
+	//if (OverlappingActorsArray.Contains(ConnectedActorWithHandInteractableInterface)) OverlappingActorsArray.Remove(ConnectedActorWithHandInteractableInterface); // TODO Check if this is applicable in every possible situation or it should be done with some sort of check 
 
 	IHandInteractable::Execute_OnDrop(ConnectedActorWithHandInteractableInterface, this);
 	ConnectedActorWithHandInteractableInterface = nullptr;
@@ -360,10 +360,11 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 
 		ConnectedActorWithHandInteractableInterface->AttachToActor(HandActor, AttachmentTransformRules);
 
-		IHandInteractable::Execute_OnFinishedAttachingToHand(ConnectedActorWithHandInteractableInterface);
-
 		CurrentAttachmentLerpValue = 0.f;
 		bIsAttachmentIsInTransitionToHand = false;
+
+		IHandInteractable::Execute_OnFinishedAttachingToHand(ConnectedActorWithHandInteractableInterface);
+
 		HandActor->ChangeHandPhysProperties(true, true);
 
 		// TODO FIX NEEDED. If object needs to be grabbed twice, it drops here, if TryToReleaseGrabbedActor(true) its bugged
