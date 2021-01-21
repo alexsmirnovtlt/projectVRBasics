@@ -3,6 +3,10 @@
 
 #include "ControllerState.h"
 
+#include "Engine/World.h"
+
+#include "../Actors/VirtualRealityMotionController.h"
+
 
 void UControllerState::SetOtherControllerReference(UControllerState* OtherControllerReference)
 {
@@ -39,5 +43,18 @@ AVirtualRealityMotionController* UControllerState::GetOwningMotionController() c
 
 uint8 UControllerState::GetControllerStateAsByte_Implementation() const
 {
-	return 0; // Must be overridden in BP because State Enum was created in the Editor so when new state is added, project C++ code should`nt be rebuild
+	return 0; // Must be overridden in BP because State Enum was created in the Editor so after new state is added, no need to edit C++ code and recompile
+}
+
+AActor* UControllerState::SpawnActor(TSubclassOf<AActor> ClassToSpawn)
+{
+	if (!GetWorld()) return nullptr;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnParams);
+	SpawnedActor->SetOwner(OwningMotionController);
+
+	return SpawnedActor;
 }

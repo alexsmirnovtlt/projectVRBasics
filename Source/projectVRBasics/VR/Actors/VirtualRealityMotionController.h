@@ -62,6 +62,9 @@ public:
 	FTransform GetPointingWorldTransform() const;
 	FTransform GetPointingWorldTransform_Implementation() const;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
+	void SetControllerVisibility(bool bVisible) const;
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Motion Controller Setup")

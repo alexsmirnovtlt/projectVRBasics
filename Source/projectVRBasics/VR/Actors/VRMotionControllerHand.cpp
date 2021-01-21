@@ -186,6 +186,11 @@ void AVRMotionControllerHand::ChangeHandAnimationStateEnum_Implementation(uint8 
 	UE_LOG(LogTemp, Error, TEXT("Blueprint \"%s\" must override function ChangeHandAnimationStateEnum()"), *this->GetClass()->GetFName().ToString());
 }
 
+void AVRMotionControllerHand::SetPhantomHandVisibility_Implementation(bool bVisible) const
+{
+	// Will be overridden in BPs
+}
+
 bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
 {
 	return !bIsGrabbing;
@@ -298,11 +303,11 @@ bool AVRMotionControllerHand::TryToGrabActor()
 bool AVRMotionControllerHand::TryToReleaseGrabbedActor(bool bForceRelease)
 {
 	if (!ConnectedActorWithHandInteractableInterface) return false;
-	if (bIsAttachmentIsInTransitionToHand) { bIsGrabbing = false; return false; } // Special case when we just grabbed actor that on its way to hand to be attached
+	if (bIsAttachmentIsInTransitionToHand) { bIsGrabbing = false; return false; } // Special case when we already want to drop actor that on its way to hand to be attached
 
 	if (!bForceRelease)
 	{
-		// Same as TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop (bForceRelease:true will always drop)
+		// Same as in TryToGrabActor(), if grabbed actor cannot be dropped on input release, skipping drop (bForceRelease:true will always drop)
 		if(IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) return false;
 		else if (IHandInteractable::Execute_IsDropDisabled(ConnectedActorWithHandInteractableInterface)) return false;
 	}
@@ -366,9 +371,13 @@ void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
 		IHandInteractable::Execute_OnFinishedAttachingToHand(ConnectedActorWithHandInteractableInterface);
 
 		HandActor->ChangeHandPhysProperties(true, true);
-
-		// TODO FIX NEEDED. If object needs to be grabbed twice, it drops here, if TryToReleaseGrabbedActor(true) its bugged
-		if (!bIsGrabbing) TryToReleaseGrabbedActor(true); // If input to drop was executed, drop it now
+		
+		// If input to drop was executed while actor moved to the hand, drop it if able
+		if (!bIsGrabbing)
+		{
+			if (IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) bIsGrabbing = true; // keep grabbing because it should not drop here
+			else TryToReleaseGrabbedActor(true);
+		}
 	}
 	else // Keep updating attached actor location so it will be attached later
 	{

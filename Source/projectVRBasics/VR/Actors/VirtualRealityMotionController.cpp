@@ -153,6 +153,11 @@ FTransform AVirtualRealityMotionController::GetPointingWorldTransform_Implementa
 	return GetControllerWorldOriginTransform();
 }
 
+void AVirtualRealityMotionController::SetControllerVisibility_Implementation(bool bVisible) const
+{
+	// Will be overridden in BPs
+}
+
 AVirtualRealityPawn* AVirtualRealityMotionController::GetVRPawn() const
 {
 	return OwningVRPawn;
