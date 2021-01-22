@@ -103,7 +103,6 @@ void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> 
 	{
 		ControllerState = NewObject<UControllerState>(this, NewStateClass);
 		ControllerState->SetOwningController(this);
-		ControllerState->OnStateEnter();
 
 		if (PairedControllerReference)
 		{
@@ -114,6 +113,8 @@ void AVirtualRealityMotionController::ChangeState(TSubclassOf<UControllerState> 
 		{
 			ControllerState->NotifyPairedControllerOfStateChange(true);
 		}
+
+		ControllerState->OnStateEnter();
 	}
 	else
 	{
