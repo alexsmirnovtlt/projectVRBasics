@@ -93,7 +93,7 @@ protected:
 	UFUNCTION()
 	virtual AActor* GetActorToForwardInputTo();
 	UFUNCTION()
-	virtual bool CanDoPointingChecks() const { return true; };
+	virtual bool CanDoPointingChecks() const { return true; }; // TODO change so it may be overrriden in BPs
 
 	bool IsRightController;
 
