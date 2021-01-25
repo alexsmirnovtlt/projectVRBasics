@@ -129,6 +129,9 @@ protected:
 	void StartMovingActorToHandForAttachment(AActor* ActorToAttach, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
+	void AttachActorToHandImmediately(AActor* ActorToAttach/*, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation*/);
+
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller - Interaction with IHandInteractable")
 	void UpdateAttachedActorLocation(float DeltaTime);
 
 	bool bGrabbedObjectImplementsPlayerInputInterface;

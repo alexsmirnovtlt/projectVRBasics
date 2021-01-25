@@ -344,7 +344,6 @@ void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorT
 	}
 
 	bIsAttachmentIsInTransitionToHand = true;
-	//ConnectedActorWithHandInteractableInterface = ActorToAttach; // TODO we clearly set up this variable already in TryToGrabActor, remove here?
 
 	auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
 	if(HandAttachmentComponent) HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
@@ -352,6 +351,46 @@ void AVRMotionControllerHand::StartMovingActorToHandForAttachment(AActor* ActorT
 	HandActor->ChangeHandPhysProperties(false, true);
 
 	InitialAttachmentTransform = ActorToAttach->GetActorTransform();
+}
+
+void AVRMotionControllerHand::AttachActorToHandImmediately(AActor* ActorToAttach/*, FVector RelativeToMotionControllerLocation, FRotator RelativeToMotionControllerRotation*/)
+{
+	// TODO This function shares some code with StartMovingActorToHandForAttachment() and UpdateAttachedActorLocation() so they should be reworked
+
+	if (!HandActor) return;
+	if (!ActorToAttach->Implements<UHandInteractable>())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Trying to attach actor '%s' to hand, but no IHandInteractable interface was found!"), *ActorToAttach->GetName());
+		return;
+	}
+
+	// Copied code above
+
+	if (!ConnectedActorWithHandInteractableInterface) ConnectedActorWithHandInteractableInterface = ActorToAttach;
+
+	// Copied code below
+
+	//auto HandAttachmentComponent = HandActor->GetActorAttachmentComponent();
+	//if (HandAttachmentComponent) HandAttachmentComponent->SetRelativeLocationAndRotation(RelativeToMotionControllerLocation, RelativeToMotionControllerRotation);
+
+	FAttachmentTransformRules AttachmentTransformRules = FAttachmentTransformRules::KeepWorldTransform;
+	AttachmentTransformRules.bWeldSimulatedBodies = true;
+
+	ConnectedActorWithHandInteractableInterface->AttachToActor(HandActor, AttachmentTransformRules);
+	/*
+	CurrentAttachmentLerpValue = 0.f;
+	bIsAttachmentIsInTransitionToHand = false;
+
+	IHandInteractable::Execute_OnFinishedAttachingToHand(ConnectedActorWithHandInteractableInterface);
+
+	HandActor->ChangeHandPhysProperties(true, true);
+
+	// If input to drop was executed while actor moved to the hand, drop it if able
+	if (!bIsGrabbing)
+	{
+		if (IHandInteractable::Execute_IsRequiresSecondButtonPressToDrop(ConnectedActorWithHandInteractableInterface)) bIsGrabbing = true; // keep grabbing because it should not drop here
+		else TryToReleaseGrabbedActor(true);
+	}*/
 }
 
 void AVRMotionControllerHand::UpdateAttachedActorLocation(float DeltaTime)
