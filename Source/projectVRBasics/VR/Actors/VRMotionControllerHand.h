@@ -44,6 +44,8 @@ public:
 	void ChangeHandAnimationStateEnum(uint8 byte) const;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Override")
 	void SetPhantomHandVisibility(bool bVisible) const;
+	UFUNCTION(BlueprintCallable, Category = "Hand Motion Controller")
+	void StopOnDropEndTimer();
 
 	 // Is hand able to grab or interact with collided actors that implements IHandInteractable
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintPure, Category = "Override")

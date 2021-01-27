@@ -191,6 +191,11 @@ void AVRMotionControllerHand::SetPhantomHandVisibility_Implementation(bool bVisi
 	// Will be overridden in BPs
 }
 
+void AVRMotionControllerHand::StopOnDropEndTimer()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_NoCollisionOnDropWait)) GetWorld()->GetTimerManager().ClearTimer(TimerHandle_NoCollisionOnDropWait);
+}
+
 bool AVRMotionControllerHand::IsHandInIdleState_Implementation() const
 {
 	return !bIsGrabbing;
