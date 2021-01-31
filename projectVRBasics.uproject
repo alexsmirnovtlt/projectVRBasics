@@ -16,15 +16,6 @@
 	],
 	"Plugins": [
 		{
-			"Name": "OculusVR",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win32",
-				"Win64",
-				"Android"
-			]
-		},
-		{
 			"Name": "ActorSequence",
 			"Enabled": false
 		},
@@ -41,10 +32,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "AndroidDeviceProfileSelector",
-			"Enabled": false
-		},
-		{
 			"Name": "AndroidMedia",
 			"Enabled": false
 		},
@@ -58,10 +45,6 @@
 			"SupportedTargetPlatforms": [
 				"Android"
 			]
-		},
-		{
-			"Name": "AndroidPermission",
-			"Enabled": false
 		},
 		{
 			"Name": "AnimationSharing",
@@ -268,10 +251,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "MobilePatchingUtils",
-			"Enabled": false
-		},
-		{
 			"Name": "WebMMoviePlayer",
 			"Enabled": false
 		},
@@ -358,9 +337,55 @@
 		{
 			"Name": "XCodeSourceCodeAccess",
 			"Enabled": false
+		},
+		{
+			"Name": "FMODStudio",
+			"Enabled": false
+		},
+		{
+			"Name": "SteamVR",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Win32",
+				"Win64",
+				"Linux",
+				"Mac"
+			]
+		},
+		{
+			"Name": "LevelSequenceEditor",
+			"Enabled": false
+		},
+		{
+			"Name": "MaterialAnalyzer",
+			"Enabled": false
+		},
+		{
+			"Name": "GeometryMode",
+			"Enabled": false
+		},
+		{
+			"Name": "DataValidation",
+			"Enabled": false
+		},
+		{
+			"Name": "CurveEditorTools",
+			"Enabled": false
+		},
+		{
+			"Name": "AssetManagerEditor",
+			"Enabled": false
+		},
+		{
+			"Name": "UObjectPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "PhysXVehicles",
+			"Enabled": false
 		}
 	],
 	"TargetPlatforms": [
-		"WindowsNoEditor"
+		"Android"
 	]
 }
