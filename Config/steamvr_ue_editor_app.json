@@ -2,7 +2,7 @@
 	"source": "UE",
 	"applications": [
 		{
-			"app_key": "application.generated.ue.projectvrbasics-14469661.ue4editor.exe",
+			"app_key": "application.generated.ue.projectvrbasics-15228867.ue4editor.exe",
 			"launch_type": "url",
 			"url": "steam://launch/",
 			"action_manifest_path": "C:/Users/Alex/Documents/Unreal Projects/projectVRBasics/Config/SteamVRBindings/steamvr_manifest.json",
@@ -10,7 +10,7 @@
 			{
 				"en_us":
 				{
-					"name": "projectVRBasics-14469661 [UE Editor]"
+					"name": "projectVRBasics-15228867 [UE Editor]"
 				}
 			}
 		}

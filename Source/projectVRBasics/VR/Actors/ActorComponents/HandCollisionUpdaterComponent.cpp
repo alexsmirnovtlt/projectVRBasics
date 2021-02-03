@@ -144,8 +144,8 @@ void UHandCollisionUpdaterComponent::UpdateWeldedBoneDriver()
 
 	FBodyInstance* ParentBody = SkeletalHandMesh->Bodies[0];
 
-	if (!ParentBody->IsInstanceSimulatingPhysics() && !ParentBody->WeldParent) return;
-
+	if (!SkeletalHandMesh->IsSimulatingPhysics() && !ParentBody->WeldParent) return;
+	
 	FPhysicsActorHandle& ActorHandle = ParentBody->WeldParent ? ParentBody->WeldParent->GetPhysicsActorHandle() : ParentBody->GetPhysicsActorHandle();
 
 	if (!FPhysicsInterface::IsValid(ActorHandle)) return;
